@@ -1,0 +1,8 @@
+# Create dependencies with venv
+pip freeze > requirements.txt
+
+# Delete __pycache__ directories
+find . -type d -name "__pycache__" -exec rm -rf {} +
+
+# Dependencies for HTMLSession
+sudo apt-get install -y libnss3 libatk-bridge2.0-0 libgtk-3-0 libasound2 libgbm1

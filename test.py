@@ -1,0 +1,75 @@
+# from requests_html import AsyncHTMLSession
+# import asyncio
+
+# async def main(): 
+#     asession = AsyncHTMLSession()
+#     r = await asession.get('https://juice-shop.herokuapp.com/#/')
+#     await r.html.arender()
+#     soup = BeautifulSoup(r.html.html, 'html.parser')
+#     print(soup.prettify())
+
+# asyncio.run(main())   
+
+
+
+import asyncio
+from bs4 import BeautifulSoup
+from playwright.async_api import async_playwright
+import httpx
+from urllib.parse import urljoin
+
+from components.web.request import Request
+from components.web.crawler import CrawlerConfig, Crawler
+
+# async def main1():
+#     async with async_playwright() as p:
+#         browser = await p.chromium.launch()
+#         page = await browser.new_page()
+        
+#         response = await page.goto("http://juice-shop.com:3000/#/login")
+#         text = await response.text()
+#         soup_login = BeautifulSoup(text, 'html.parser')
+        
+#         print(soup_login.prettify())
+
+#         await browser.close()
+        
+# async def main2():
+#     async with httpx.AsyncClient() as client:
+        
+#         response_login = await client.get("http://juice-shop.com:3000/#/login")
+#         soup_login = BeautifulSoup(response_login.text, 'html.parser')
+#         print(soup_login.prettify())
+        
+#         await client.aclose()
+    
+
+# asyncio.run(main1())
+# print("--" * 20)
+# asyncio.run(main2())
+
+#print(urljoin("http://juice-shop.com:3000/#/", '/login', allow_fragments=True))
+
+async def main():
+    request = Request("http://juice-shop.com:3000/login")
+
+    async with async_playwright() as p:
+        browser = await p.chromium.launch()
+        context = await browser.new_context()
+
+        # 1) give the crawler your BrowserContext
+        crawler = Crawler.client(CrawlerConfig(request, context=context))
+
+        # 2) manually verify via Playwright
+        page = await context.new_page()
+        await page.goto(request.url, wait_until='networkidle')
+        #print("Playwright DOM:\n", await page.content())
+
+        # 3) now crawler.get() will do the same
+        response = await crawler.get(request)
+        soup = BeautifulSoup(response.content, 'html.parser')
+        print("Crawler DOM:\n", soup.prettify())
+
+asyncio.run(main())
+        
+    
