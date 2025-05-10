@@ -243,8 +243,6 @@ class HTML:
                     post_params.append([radio_name, radio_value])
 
             if method == "POST" and not post_params and not file_params:
-                # Ignore empty forms. Those are either webdev issues or forms having only "button" types that
-                # only rely on JS code.
                 continue
 
             # First raise the form with the URL specified in the action attribute

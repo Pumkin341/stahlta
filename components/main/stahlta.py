@@ -100,15 +100,11 @@ async def stahlta_main():
             
         await stal.browse(stop_event)
         
-        if stop_event.is_set():
-            logger.info("Scan aborted by user.")
-            await stal.close_browser()
-            return
-        
         logger.info(f"Scan completed, found {stal.count_resources()} resources. \n")
         
-        #await stal.attack()
+        await stal.attack()
         await stal.close_browser()
+        
     finally:
         try:
             loop.remove_signal_handler(signal.SIGINT)

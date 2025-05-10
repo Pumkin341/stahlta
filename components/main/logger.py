@@ -3,26 +3,68 @@ from loguru import logger
 
 def configure_logging():
     logger.remove()
+    
     logger.level("INFO", color="<green>")
+    logger.level("ATTACK", no=25, color="<yellow>")
+    logger.level("LOW", no=30, color="<blue>")
+    logger.level("MEDIUM", no=35, color="<cyan>")
+    logger.level("HIGH", no=40, color="<red>")
+    logger.level("VULN", no=45, color="<magenta>")
 
     logger.add(
         sys.stdout,
         level="DEBUG",
         format="<level>{level}</level> | {message}",
-        filter=lambda r: r["level"].no <= logger.level("INFO").no,
+        filter=lambda rec: rec["level"].no <= logger.level("INFO").no,
     )
 
     logger.add(
         sys.stdout,
-        level="WARNING",
+        level="ATTACK",
         format="<level>{level}</level> | {message}",
-        filter=lambda r: r["level"].no == logger.level("WARNING").no,
+        filter=lambda rec: rec["level"].no == logger.level("ATTACK").no,
     )
 
     logger.add(
         sys.stdout,
         level="ERROR",
         format="<level>{level}</level> | {file.name}:{line} - {message}",
+        filter=lambda rec: rec["level"].no == logger.level("ERROR").no,
+    )
+
+    logger.add(
+        sys.stdout,
+        level="LOW",
+        format="<level>{level}</level> | {message}",
+        filter=lambda rec: rec["level"].no == logger.level("LOW").no,
+    )
+
+    logger.add(
+        sys.stdout,
+        level="MEDIUM",
+        format="<level>{level}</level> | {message}",
+        filter=lambda rec: rec["level"].no == logger.level("MEDIUM").no,
+    )
+
+    logger.add(
+        sys.stdout,
+        level="HIGH",
+        format="<level>{level}</level> | {message}",
+        filter=lambda rec: rec["level"].no == logger.level("HIGH").no,
+    )
+
+    logger.add(
+        sys.stdout,
+        level="CRITICAL",
+        format="<level>{level}</level> | {message}",
+        filter=lambda rec: rec["level"].no == logger.level("CRITICAL").no,
+    )
+
+    logger.add(
+        sys.stdout,
+        level="VULN",
+        format="{message}",
+        filter=lambda rec: rec["level"].no == logger.level("VULN").no,
     )
 
 configure_logging()

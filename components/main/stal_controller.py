@@ -1,4 +1,7 @@
 import asyncio
+import ssl
+import time
+from urllib.request import urlopen
 from collections import deque
 from urllib.robotparser import RobotFileParser
 from urllib.parse import urlparse, urlunparse
@@ -32,7 +35,7 @@ class Stahlta:
         self._browser = None
         self.p = None
         self._max_depth = 30
-        self._timeout = 10
+        self._timeout = 5
         self._attack_list = []
         
         self._resources  = []
@@ -40,8 +43,21 @@ class Stahlta:
 
     def get_robot_urls(self):
 
-        parser = RobotFileParser(url=f'{self._base_request.scheme}://{self._base_request.netloc}/robots.txt')
-        parser.read()
+        parser = RobotFileParser()
+        robots_url = f'{self._base_request.scheme}://{self._base_request.netloc}/robots.txt'
+        parser.set_url(robots_url)
+
+        try:
+            ctx = ssl._create_unverified_context()
+            with urlopen(robots_url, context=ctx) as f:
+                lines = [line.decode('utf-8', errors='ignore') for line in f.readlines()]
+            parser.parse(lines)
+            
+        except Exception as e:
+            logger.warning(f"Could not fetch or parse robots.txt ({robots_url}): {e}")
+            self._robot_urls = []
+            return
+
 
         if parser.disallow_all:
             self._robot_urls = [f"{self._base_request.scheme}://{self._base_request.netloc}/"]
@@ -96,11 +112,9 @@ class Stahlta:
         explorer.timeout = self._timeout
 
         try:
-            await asyncio.wait_for(self.save_resources(explorer), None)
+            await self.save_resources(explorer)
         finally:
             await explorer.clean()
-            if context:
-                await context.close()
     
             #[print(response.status_code) for request, response in self._resources]
         
@@ -135,10 +149,13 @@ class Stahlta:
 
             for attack_obj in instances:
                 
-                logger.info(f"Running attack: {attack_obj.name} \n")
+                logger.log('ATTACK', f"Running attack: {attack_obj.name} \n")
+                
                 task = asyncio.create_task(self.run_attack(attack_obj))
+                
                 try:
                     await task
+                    print()
                     
                 except Exception as e:
                     logger.error(f"Error running attack {attack_obj.name}: {e}")

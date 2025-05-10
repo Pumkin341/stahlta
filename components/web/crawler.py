@@ -1,6 +1,7 @@
 import asyncio
 import ssl
 import httpx
+from functools import wraps
 from dataclasses import dataclass
 from http.cookiejar import CookieJar
 
@@ -31,8 +32,28 @@ class CrawlerConfig:
     secure : bool = True 
     
     
+def retry(times: int = 3, delay: float = 1.0, exceptions: tuple = (httpx.TransportError,)):
+
+    def decorator(fn):
+        @wraps(fn)
+        async def wrapped(*args, **kwargs):
+            last_exc = None
+            for attempt in range(1, times + 1):
+                try:
+                    return await fn(*args, **kwargs)
+                except exceptions as e:
+                    last_exc = e
+                    if attempt == times:
+                        raise
+                    await asyncio.sleep(delay)
+                    
+            raise last_exc
+        return wrapped
+
+    return decorator
+
 class Crawler:
-    def __init__(self, base_request : Request, client : httpx.AsyncClient, context : BrowserContext, timeout : int = 10):
+    def __init__(self, base_request : Request, client : httpx.AsyncClient, context : BrowserContext, timeout : int = 5):
         
         self._base_request = base_request
         self._client = client
@@ -54,13 +75,18 @@ class Crawler:
 
         if config.compression == False:
             headers['Accept-Encoding'] = "identity"
-            
-        ssl_ctx = httpx.create_ssl_context() 
-        ssl_ctx.check_hostname = config.secure
-        if config.secure:
-            ssl_ctx.verify_mode = ssl.CERT_REQUIRED
-        else:
-            ssl_ctx.verify_mode = ssl.CERT_NONE
+        
+        try:    
+            ssl_ctx = httpx.create_ssl_context() 
+            ssl_ctx.check_hostname = config.secure
+            if config.secure:
+                ssl_ctx.verify_mode = ssl.CERT_REQUIRED
+            else:
+                ssl_ctx.verify_mode = ssl.CERT_NONE
+                
+        except Exception as e:
+            logger.error(f"SSL context error: {e}")
+            ssl_ctx = None
             
         authentification = None
         if config.http_auth:
@@ -87,6 +113,7 @@ class Crawler:
         return cls(config.base_request, client, context, config.timeout)
     
     
+    @retry(times=3, delay=0.5)
     async def get(self, base_request : Request, redirect : bool = True, headers : dict = None, timeout : int = None) -> httpx.Response:
         
         # Headless
@@ -160,7 +187,8 @@ class Crawler:
             raise e
         
         return response
-        
+    
+    @retry(times=3, delay=0.5)    
     async def post(self, method : str, base_request : Request, redirect : bool  = False, headers : dict = None, timeout : int = None):
         
         if timeout is None:
@@ -225,3 +253,11 @@ class Crawler:
     @property
     def cookie_jar(self):
         return self._client.cookies.jar
+    
+    @property
+    def context(self):
+        return self._context
+    
+    @context.setter
+    def context(self, context : BrowserContext):
+        self._context = context

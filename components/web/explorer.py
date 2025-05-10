@@ -59,9 +59,6 @@ class Explorer:
         if response_type.startswith('text/') or response_type.startswith('application/xml'):
             
             html = HTML(response.text, str(response.url))
-            if response.url == 'http://juice-shop.com:3000/login':
-                print(html.soup.prettify)
-                
             allowed_links.extend(self._scope.filter(html.links))    
             allowed_links.extend(self._scope.filter(html.js_redirections + html.html_redirections))
      
@@ -77,9 +74,9 @@ class Explorer:
                         
                     new_requests.append(form)
                     
-            # if html.find_login_form()[0] != None:
-            #     print(f" [+] Found a login form at {response.url}")
-            #     print(f" [+] Form: {html.find_login_form()}")
+            if html.find_login_form()[0] != None:
+                print(f" [+] Found a login form at {response.url}")
+                print(f" [+] Form: {html.find_login_form()}")
                     
         for url in javascript_links:
             if url:
@@ -112,7 +109,8 @@ class Explorer:
             self._processed_requests.add(request)
             self._hostnames.add(request.hostname)
             
-            logger.info(f"Request {request.url:<80} Method {request.method:<5} Depth {request.depth:<5}")
+            #logger.info(f"Request {request.url:<80} Method {request.method:<5} Depth {request.depth:<5}")
+            logger.info(request)
 
             try:
                 response = await self._crawler.send(request)
@@ -139,56 +137,56 @@ class Explorer:
             return True, links, response    
         
     async def async_explore(self, to_explore: Deque[Request]):
-        task_request_dict = {}
-        
-        while True:
-            while to_explore:
-                if self._stop_event.is_set():
-                    return
-                
-                request = to_explore.popleft()
-                if request in self._processed_requests or not self._is_allowed(request.url):
-                    continue
-                
-                if request.depth > self._max_depth:
-                    continue
-                
-                self._processed_requests.add(request)
-                task = asyncio.create_task(self._async_analyze(request))
-                task_request_dict[task] = request
+            task_request_dict: dict[asyncio.Task, Request] = {}
 
-            if self._stop_event.is_set():
-                return
-
-            if task_request_dict:
-                done, pending = await asyncio.wait(task_request_dict, timeout=0.25, return_when=asyncio.FIRST_COMPLETED)
-            else:
-                done = set()
-            
-            for task in done:
-                request = task_request_dict[task]
-                try:
-                    success, links, response = await task
-                except Exception as e:
-                    logger.error(e)
-                else:
-                    if success:
-                        yield request, response
-
-                    for unprocessed_request in links:
-                        if not self._scope.check(unprocessed_request):
+            try:
+                while True:
+                    
+                    while to_explore and not self._stop_event.is_set():
+                        req = to_explore.popleft()
+                        if req in self._processed_requests or not self._is_allowed(req.url):
+                            continue
+                        if req.depth > self._max_depth:
                             continue
 
-                        if unprocessed_request.hostname not in self._hostnames:
-                            unprocessed_request.depth = 0
+                        self._processed_requests.add(req)
+                        task = asyncio.create_task(self._async_analyze(req))
+                        task_request_dict[task] = req
 
-                        if unprocessed_request not in self._processed_requests and unprocessed_request not in to_explore:
-                            to_explore.append(unprocessed_request)
-                            
-                del task_request_dict[task]
-            
-            if (not task_request_dict and not to_explore) or self._stop_event.is_set():
-                break
+                    if self._stop_event.is_set():
+                        for t in list(task_request_dict):
+                            t.cancel()
+                        break
+
+                    if not task_request_dict and not to_explore:
+                        break
+
+                    done, _ = await asyncio.wait( task_request_dict, timeout=0.25, return_when=asyncio.FIRST_COMPLETED)
+
+                    for t in done:
+                        req = task_request_dict.pop(t)
+                        try:
+                            success, links, response = await t
+                        except asyncio.CancelledError:
+                            continue
+                        except Exception as e:
+                            logger.error(e)
+                            continue
+
+                        if success:
+                            yield req, response
+
+                        for new_req in links:
+                            if not self._scope.check(new_req) or not self._is_allowed(new_req.url):
+                                continue
+                            if new_req.hostname not in self._hostnames:
+                                new_req.depth = 0
+                            if new_req not in self._processed_requests and new_req not in to_explore:
+                                to_explore.append(new_req)
+
+            finally:
+                for t in task_request_dict:
+                    t.cancel()
     
     def _is_allowed(self, url: str) -> bool:
         return not any(url.startswith(dis) for dis in self._robot_urls)

@@ -69,7 +69,11 @@ class Request():
         post_params are the same as get_params.
         '''
             
-        if isinstance(get_params, list):
+        if parts.query:
+            raw = parse_qs(parts.query)
+            self._get_params = {k: tuple(v) for k, v in raw.items()}
+   
+        elif isinstance(get_params, list):
             self._get_params = dict(get_params)
             
         elif isinstance(get_params, dict):
@@ -84,12 +88,6 @@ class Request():
                     k, v = seg, ''
                 tmp[k] = v
             self._get_params = tmp
-            
-        else:
-            if parts.query:
-                self._get_params = {k: v[0] for k, v in parse_qs(parts.query).items()}
-            else:
-                self._get_params = {}
         
         if not post_params:
             self._post_params = {}
@@ -116,31 +114,27 @@ class Request():
             self._file_params = []
         
     def __hash__(self):
-        get_items  = tuple(sorted(self._get_params.items()))
-        post_items = tuple(sorted(self._post_params.items()))
+        get_keys = tuple(sorted(self._get_params.keys()))
+        post_keys = tuple(sorted(self._post_params.keys()))
         file_items = tuple(sorted(tuple(fp) for fp in self._file_params))
         
-        return hash((
-            self._method,
-            self._resource_path,
-            get_items,
-            post_items,
-            file_items
-        ))
-
+        return hash((self._method, self._resource_path, get_keys, post_keys, file_items))
+    
     def __eq__(self, other):
         if not isinstance(other, Request):
             return NotImplemented
         
-        our_files   = sorted(tuple(fp) for fp in self._file_params)
+        same_get_keys = set(self._get_params.keys()) == set(other.get_params.keys())
+        same_post_keys = set(self._post_params.keys()) == set(other.post_params.keys())
+        
+        our_files = sorted(tuple(fp) for fp in self._file_params)
         their_files = sorted(tuple(fp) for fp in other.file_params)
-        return (
-            self._method == other.method and
-            self._resource_path == other.path and
-            self._get_params == other.get_params and
-            self._post_params == other.post_params and
-            our_files == their_files
-        )
+        
+        return (self._method == other.method and
+                self._resource_path == other.path and
+                same_get_keys and
+                same_post_keys and
+                our_files == their_files)
         
     def __repr__(self):
         return f"Request({self._url}, {self._method}, depth={self._depth}, get_params={self._get_params}, post_params={self._post_params})"
