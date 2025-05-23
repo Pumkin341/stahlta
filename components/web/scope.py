@@ -30,6 +30,10 @@ class Scope:
         elif self._scope == "page":
             checked = url.split("?")[0] == self._base_request.path
             
+        elif self._scope == "parameter":
+            checked = False
+            #checked = urlparse(url).query == self._base_request.url.split("?")[1]
+            
         if checked is None:
             checked = url == self._base_request.url
             

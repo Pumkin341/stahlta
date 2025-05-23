@@ -1,42 +1,44 @@
 import asyncio
 import ssl
 import time
+
 from urllib.request import urlopen
-from collections import deque
 from urllib.robotparser import RobotFileParser
 from urllib.parse import urlparse, urlunparse
+from urllib.error import URLError
+
+from collections import deque
 from playwright.async_api import async_playwright
 
 from components.main.logger import logger
 from components.web.request import Request
-from components.web.crawler import CrawlerConfig, Crawler
+from components.web.crawler import CrawlerConfig, Crawler, HTTP_Auth
 from components.web.explorer import Explorer
 from components.web.scope import Scope
 
 from components.attack.base_attack import modules_all, BaseAttack
 
 class Stahlta:
-    '''
-    Controller for Stahlta. THis class handles the options from the command line and sets the modules to be used.
-    '''
-
     def __init__(self, base_request : Request, scope):
         
         self._base_request : Request = base_request
         self._scope = Scope(base_request= self._base_request, scope= scope)
+        self.crawler_config = CrawlerConfig(self._base_request)
         
         self._urls = []
         self._forms = []
         
         self._start_urls = deque([self._base_request])
-        self._robot_urls = []
-        
+        self.bad_urls = []
+ 
         self._headless = None
         self._browser = None
         self.p = None
+        
         self._max_depth = 30
         self._timeout = 5
         self._attack_list = []
+        self._wordlist_path = None
         
         self._resources  = []
     
@@ -53,14 +55,15 @@ class Stahlta:
                 lines = [line.decode('utf-8', errors='ignore') for line in f.readlines()]
             parser.parse(lines)
             
-        except Exception as e:
-            logger.warning(f"Could not fetch or parse robots.txt ({robots_url}): {e}")
-            self._robot_urls = []
+        except URLError:
             return
-
-
+            
+        except Exception as e:
+            logger.warning(f"Could not fetch or parse robots.txt ({robots_url})")
+            return
+        
         if parser.disallow_all:
-            self._robot_urls = [f"{self._base_request.scheme}://{self._base_request.netloc}/"]
+            self.bad_urls = [f"{self._base_request.scheme}://{self._base_request.netloc}/"]
 
         entries = parser.entries[:]
         if parser.default_entry:
@@ -75,7 +78,7 @@ class Stahlta:
                     path = rule.path or "/"
                     disallowed.append(f"{self._base_request.scheme}://{self._base_request.netloc}{path}")
 
-        self._robot_urls = disallowed
+        self.bad_urls = disallowed
 
     async def save_resources(self, explorer):
         
@@ -89,24 +92,9 @@ class Stahlta:
     async def browse(self, stop_event : asyncio.Event, parallelism = 10):
         
         stop_event.clear()
-        self._start_urls = deque([ self._base_request ])
         self.get_robot_urls()
-        
-        logger.info(f'Headless mode activated: {self._headless.title()}')
-        
-        context = None
-        if self._headless == 'yes':
-            try:
-                context = await self._browser.new_context()
-                self._crawler_config = CrawlerConfig(self._base_request, context = context)
-                explorer = Explorer(self._crawler_config, self._scope, stop_event, robot_urls = self._robot_urls, parallelism = parallelism)
-                
-            except Exception as e:
-                logger.error(f"Error initializing headless context: {e}")
-                return
-        else:    
-            self._crawler_config = CrawlerConfig(self._base_request)
-            explorer = Explorer(self._crawler_config, self._scope, stop_event, robot_urls = self._robot_urls, parallelism = parallelism)
+    
+        explorer = Explorer(self.crawler_config, self._scope, stop_event, bad_urls = self.bad_urls, parallelism = parallelism)
             
         explorer.max_depth = self._max_depth
         explorer.timeout = self._timeout
@@ -115,11 +103,13 @@ class Stahlta:
             await self.save_resources(explorer)
         finally:
             await explorer.clean()
+            await self.close_browser()
+            
+        self.crawler_config.context = None
     
-            #[print(response.status_code) for request, response in self._resources]
+        #[print(request, response) for request, response in self._resources]
         
     async def run_attack(self, attack_obj):
-        
         async for request, response in self.iter_resources():
             try:
                 await attack_obj.run(request, response)
@@ -129,12 +119,13 @@ class Stahlta:
                 continue
     
     async def attack(self):
-        
         registry = BaseAttack.load_attacks()
         
         names = [n.lower() for n in self._attack_list]
         if 'all' in names:
             attack_classes = list(registry.values())
+            print(attack_classes)
+            
         else:
             attack_classes = []
             for name in names:
@@ -143,16 +134,15 @@ class Stahlta:
                     attack_classes.append(cls)
 
         
-        async with Crawler.client(self._crawler_config) as crawler:
+        async with Crawler.client(self.crawler_config) as crawler:
             
-            instances = [cls(crawler, self._crawler_config) for cls in attack_classes]
+            instances = [cls(crawler, self.crawler_config, self._wordlist_path) for cls in attack_classes]
 
             for attack_obj in instances:
                 
                 logger.log('ATTACK', f"Running attack: {attack_obj.name} \n")
                 
                 task = asyncio.create_task(self.run_attack(attack_obj))
-                
                 try:
                     await task
                     print()
@@ -165,6 +155,8 @@ class Stahlta:
         try:
             self.p = await async_playwright().start()
             self._browser = await self.p.chromium.launch(headless=True,  args=[ "--lang=en-US", "--disable-blink-features=AutomationControlled"])
+            self.crawler_config.context = await self._browser.new_context()
+            
         except Exception as e:
             logger.error(f"Error initializing headless browser: {e}")
             return
@@ -179,6 +171,16 @@ class Stahlta:
     def count_resources(self):
         return len(self._resources)
     
+    def set_login(self, login_state, cookies, disconnect_urls):
+        self.logged_in = login_state
+        self.crawler_config.cookies = cookies
+        self.bad_urls.extend(disconnect_urls)
+        
+    def add_start_url(self, start_url):
+        if self._scope.check(start_url):
+            self._start_urls.append(start_url)
+        
+ 
     @property
     def headless(self):
         return self._headless
@@ -206,8 +208,17 @@ class Stahlta:
     @property
     def timeout(self):
         return self._timeout 
-        
+    
+    @timeout.setter    
     def timeout(self, timeout : int):
         self._timeout = timeout
+    
+    @property
+    def wordlist_path(self):
+        return self._wordlist_path
+    
+    @wordlist_path.setter
+    def wordlist_path(self, wordlist : str):
+        self._wordlist_path = wordlist
         
     

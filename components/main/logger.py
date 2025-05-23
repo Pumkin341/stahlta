@@ -4,11 +4,13 @@ from loguru import logger
 def configure_logging():
     logger.remove()
     
+    ORANGE = "\x1b[38;2;255;165;0m"
+    
     logger.level("INFO", color="<green>")
     logger.level("ATTACK", no=25, color="<yellow>")
     logger.level("LOW", no=30, color="<blue>")
-    logger.level("MEDIUM", no=35, color="<cyan>")
-    logger.level("HIGH", no=40, color="<red>")
+    logger.level("MEDIUM", no=35, color=ORANGE)
+    logger.level("HIGH", no=41, color="<red>")
     logger.level("VULN", no=45, color="<magenta>")
 
     logger.add(

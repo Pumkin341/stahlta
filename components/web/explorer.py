@@ -1,6 +1,5 @@
 import asyncio
 import httpx
-from http.cookiejar import CookieJar
 from typing import Deque
 from urllib.parse import urljoin
 
@@ -17,7 +16,7 @@ from components.web import EXCLUDED_EXTENSIONS
 
 class Explorer:
     
-    def __init__(self, crawler_config : CrawlerConfig, scope : Scope, stop_event : asyncio.Event, robot_urls : list, parallelism : int= 5):
+    def __init__(self, crawler_config : CrawlerConfig, scope : Scope, stop_event : asyncio.Event, bad_urls : list, parallelism : int= 5):
         
         self._crawler = Crawler.client(crawler_config)
         self._scope = scope
@@ -26,11 +25,11 @@ class Explorer:
         
         self._max_depth = 30
         self._max_pagesize = 3000000
-        self._cookiejar = CookieJar()
+        self._cookies = {}
         self._hostnames = set()
         
         self._processed_requests = set()
-        self._robot_urls = robot_urls
+        self._bad_urls = bad_urls
         
     
     def extract_links(self, response : httpx.Response, request):
@@ -67,6 +66,7 @@ class Explorer:
                 
             for form in html.forms_iterator():
                 if self._scope.check(form):
+   
                     if form.hostname not in self._hostnames:
                         form.depth = 0
                     else:
@@ -74,9 +74,9 @@ class Explorer:
                         
                     new_requests.append(form)
                     
-            if html.find_login_form()[0] != None:
-                print(f" [+] Found a login form at {response.url}")
-                print(f" [+] Form: {html.find_login_form()}")
+            # if html.find_login_form()[0] != None:
+            #     print(f" [+] Found a login form at {response.url}")
+            #     print(f" [+] Form: {html.find_login_form()}")
                     
         for url in javascript_links:
             if url:
@@ -110,7 +110,7 @@ class Explorer:
             self._hostnames.add(request.hostname)
             
             #logger.info(f"Request {request.url:<80} Method {request.method:<5} Depth {request.depth:<5}")
-            logger.info(request)
+            logger.debug(request)
 
             try:
                 response = await self._crawler.send(request)
@@ -189,7 +189,7 @@ class Explorer:
                     t.cancel()
     
     def _is_allowed(self, url: str) -> bool:
-        return not any(url.startswith(dis) for dis in self._robot_urls)
+        return not any(url.startswith(dis) for dis in self._bad_urls)
             
     async def clean(self):
         self._cookiejar = self._crawler.cookie_jar

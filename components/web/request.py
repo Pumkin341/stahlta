@@ -69,9 +69,9 @@ class Request():
         post_params are the same as get_params.
         '''
             
-        if parts.query:
+        if parts.query and not get_params:
             raw = parse_qs(parts.query)
-            self._get_params = {k: tuple(v) for k, v in raw.items()}
+            self._get_params = {k: v[0] for k, v in raw.items()}
    
         elif isinstance(get_params, list):
             self._get_params = dict(get_params)
@@ -174,67 +174,66 @@ class Request():
     @property
     def depth(self):
         return self._depth
+    @depth.setter
+    def depth(self, depth):
+        self._depth = depth
+        
+    @property
+    def referer(self):
+        return self._referer
+    @referer.setter
+    def referer(self, referer):
+        self._referer = referer
     
     @property
     def headers(self):
         return self._headers
-    
-    @property
-    def response_content(self):
-        return self._response_content
-    
-    @property
-    def size(self):
-        return self._size
+    @headers.setter
+    def headers(self, headers):
+        self._headers = headers
     
     @property
     def method(self):
         return self._method
-    
-    @property
-    def enctype(self):
-        return self._enctype
-    
-    @property
-    def encoding(self):
-        return self._encoding
-    
-    @property
-    def get_params(self):
-        return self._get_params
+    @method.setter
+    def method(self, method):
+        self._method = method
+            
     
     @property
     def file_params(self):
         return self._file_params
     
-    @headers.setter
-    def headers(self, headers):
-        self._headers = headers
-        
+    @property
+    def response_content(self):
+        return self._response_content
     @response_content.setter
     def response_content(self, content):
         self._response_content = content
         
-    @depth.setter
-    def depth(self, depth):
-        self._depth = depth
-        
+    @property
+    def size(self):
+        return self._size    
     @size.setter
     def size(self, size):
         self._size = size
-        
-    @method.setter
-    def method(self, method):
-        self._method = method
-        
+    @property
+    def enctype(self):
+        return self._enctype
     @enctype.setter
     def enctype(self, enctype):
         self._enctype = enctype
         
+    @property
+    def encoding(self):
+        return self._encoding
     @encoding.setter
     def encoding(self, encoding):
         self._encoding = encoding
         
+    @property
+    def get_params(self):
+        return self._get_params
     @get_params.setter
     def get_params(self, get_params):
         self._get_params = get_params
@@ -242,7 +241,6 @@ class Request():
     @property
     def post_params(self):
         return self._post_params
-    
     @post_params.setter
     def post_params(self, value):
         if not value:

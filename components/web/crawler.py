@@ -5,7 +5,7 @@ from functools import wraps
 from dataclasses import dataclass
 from http.cookiejar import CookieJar
 
-from playwright.async_api import BrowserContext, Browser
+from playwright.async_api import BrowserContext
 from playwright._impl._errors import TargetClosedError
 
 from components.web.request import Request
@@ -107,6 +107,7 @@ class Crawler:
         if config.context:
             context = config.context
             context.set_default_timeout(config.timeout * 1000)
+            
         else:
             context = None
             
@@ -118,7 +119,6 @@ class Crawler:
         
         # Headless
         page = None
-        
         timeout = timeout or self._timeout
         
         if self._context:
@@ -126,6 +126,7 @@ class Crawler:
                 page = await self._context.new_page()
                 if headers:
                     await page.set_extra_http_headers(headers)
+                    
                 pr = await page.goto(
                     base_request.url,
                     wait_until='domcontentloaded',
@@ -141,15 +142,12 @@ class Crawler:
             except TargetClosedError:
                 if page is not None:
                     await page.close()
-                raise
+                pass
             
-            except Exception as e:
-                if 'net::ERR_ABORTED' in str(e) or 'Protocol error' in str(e):
-                    if page is not None:
-                        await page.close()
-                    raise asyncio.CancelledError()
-                logger.error(f'GET on url: {base_request}: {e}')
-                raise
+            except TimeoutError:
+                if page is not None:
+                    await page.close()
+                pass
             
             finally:
                 if page is not None:
@@ -173,7 +171,7 @@ class Crawler:
                 status_code=pr.status,
                 headers=raw_headers,
                 content=content,
-                request=httpx_req
+                request=httpx_req,
             )
             
         # httpx
@@ -183,7 +181,11 @@ class Crawler:
             response = await self._client.send(get_request, follow_redirects = redirect)
             
         except httpx.TransportError as e:
-            logger.error(f"GET on url: {self._base_request}: {e}")
+            logger.error(f"GET HTTPX Transport Error: {base_request}: {e!r}", exc_info=True)
+            raise e
+        
+        except Exception as e:
+            logger.error(f"GET HTTPX Error: {base_request}: {e}")
             raise e
         
         return response
@@ -201,9 +203,8 @@ class Crawler:
         try:
             response = await self._client.send(post_request, follow_redirects = redirect)
 
-            
         except httpx.TransportError as e:
-            logger.error(f"POST on url: {self._base_request}: {e}")
+            logger.error(f"POST on url: {base_request}: {e}")
             raise e
         
         return response
@@ -253,6 +254,10 @@ class Crawler:
     @property
     def cookie_jar(self):
         return self._client.cookies.jar
+    
+    @cookie_jar.setter
+    def cookie_jar(self, cookie_jar):
+        self._client.cookies = cookie_jar
     
     @property
     def context(self):

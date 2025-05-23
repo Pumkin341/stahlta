@@ -31,19 +31,11 @@ AUTOFILL= {
     "week": "2024-W10"
 }
 
-DISCONNECT_REGEX = r'(?i)((log|sign)\s?(out|off)|disconnect|déconnexion)'
-CONNECT_ERROR_REGEX = r'(invalid|'\
-                      r'authentication failed|'\
-                      r'denied|'\
-                      r'incorrect|'\
-                      r'failed|'\
-                      r'not found|'\
-                      r'expired|'\
-                      r'try again|'\
-                      r'captcha|'\
-                      r'two-factors|'\
-                      r'verify your email|'\
-                      r'erreur)'
+DISCONNECT_REGEX = r'(?i)(?<![A-Za-z0-9])(?:log(?:[-_\s]?out)?|out|sign(?:[-_\s]?(?:off|out))|disconnect)(?![A-Za-z0-9])'
+
+
+CONNECT_ERROR_REGEX = [r'(invalid|', r'authentication failed|', r'denied|', r'incorrect|',r'failed|', r'not found|',\
+    r'expired|', r'try again|', r'captcha|', r'two-factors|', r'verify your email)']
 
 
 def get_input_field_value(input_field) -> str:
@@ -158,18 +150,21 @@ class HTML:
             form_actions = set()
             radio = {}
             
-            for input_field in form.find_all("input", attr = {"name" : True}):
-                input_type = input_field.attrs.get("type", "text").strip().lower()    
+            for input_field in form.find_all("input", attrs = {"name" : True}):
+                input_type = input_field.attrs.get("type", "text").strip().lower() 
                 
                 if input_type in AUTOFILL:
                     if input_type == 'file':
                         if method == 'GET':
                             get_params.append([input_field["name"], "img.png"])
+                            
                         else:
                             if 'multiple' in enctype:
                                 file_params.append([input_field["name"], AUTOFILL['file']])
+                                
                             else:
                                 post_params.append([input_field["name"], 'img.png'])
+                                
                     else:
                         value = get_input_field_value(input_field)
                         if input_type == 'radio':
@@ -178,6 +173,7 @@ class HTML:
                             get_params.append([input_field["name"], value])
                         else:
                             post_params.append([input_field["name"], value])
+                            
                 elif input_type == 'image':
                     if method == 'GET':
                         get_params.append([input_field["name"] + ".x", "1"])
@@ -273,39 +269,49 @@ class HTML:
                 yield new_form
                 
     def find_login_form(self):
-            
         for form in self.soup.find_all("form"):
-            username_field_idx = []
-            password_field_idx = []
+            username_keys = []
+            password_keys = []
 
-            for i, input_field in enumerate(form.find_all("input")):
+            for input_field in form.find_all("input", attrs={"name": True}):
+                print(input_field)
                 input_type = input_field.attrs.get("type", "text").lower()
-                input_name = input_field.attrs.get("name", "undefined").lower()
-                input_id = input_field.attrs.get("id", "undefined").lower()
-                if input_type == "email":
-                    username_field_idx.append(i)
+                print(input_type)
+                name = input_field.attrs["name"]
+                name_l = name.lower()
+                id_l   = input_field.attrs.get("id", "").lower()
 
-                elif input_type == "text" and (
-                        any(field_name in input_name for field_name in ["mail", "user", "login", "name", "email", "username"]) or
-                        any(field_id in input_id for field_id in ["mail", "user", "login", "name", "email", "username"])
-                ):
-                    username_field_idx.append(i)
+                is_user = (
+                    input_type == "email"
+                    or (input_type == "text" and any(tok in name_l for tok in ["mail", "user", "login", "name", "email", "username"]))
+                    or (input_type == "text" and any(tok in id_l for tok in ["mail", "user", "login", "name", "email", "username"]))
+                    or (input_type == "username" and any(tok in name_l for tok in ["mail", "user", "login", "name", "email", "username"]))
+                )
+                if is_user:
+                    username_keys.append(name)
 
-                elif input_type == "password":
-                    password_field_idx.append(i)
-
-            if len(username_field_idx) == 1 and len(password_field_idx) == 1:
+                if input_type == "password":
+                    password_keys.append(name)
+                    
+            print(username_keys, password_keys)
+            if len(username_keys) == 1 and len(password_keys) == 1:
                 inputs = form.find_all("input", attrs={"name": True})
-
-                url = self._urljoin(form.attrs.get("action", "").strip() or self._url)
-                method = form.attrs.get("method", "GET").strip().upper()
+                url     = self._urljoin(form.attrs.get("action", "").strip() or self._url)
+                method  = form.attrs.get("method", "GET").strip().upper()
                 enctype = form.attrs.get("enctype", "application/x-www-form-urlencoded").lower()
-                post_params = []
-                get_params = []
+
                 if method == "POST":
-                    post_params = [[input_data["name"], input_data.get("value", "")] for input_data in inputs]
+                    post_params = {
+                        inp["name"]: inp.get("value", "")
+                        for inp in inputs
+                    }
+                    get_params = {}
                 else:
-                    get_params = [[input_data["name"], input_data.get("value", "")] for input_data in inputs]
+                    get_params = {
+                        inp["name"]: inp.get("value", "")
+                        for inp in inputs
+                    }
+                    post_params = {}
 
                 login_form = Request(
                     url,
@@ -317,56 +323,85 @@ class HTML:
                     enctype=enctype,
                 )
 
-                return login_form, username_field_idx[0], password_field_idx[0]
+                return login_form, username_keys[0], password_keys[0]
             
+            elif len(username_keys) == 1 and len(password_keys) == 0:
+                inputs  = form.find_all("input", attrs={"name": True})
+                url     = self._urljoin(form.attrs.get("action", "").strip() or self._url)
+                method  = form.attrs.get("method", "GET").strip().upper()
+                enctype = form.attrs.get("enctype", "application/x-www-form-urlencoded").lower()
+
+                if method == "POST":
+                    post_params = { inp["name"]: inp.get("value","") for inp in inputs }
+                    get_params  = {}
+                else:
+                    get_params  = { inp["name"]: inp.get("value","") for inp in inputs }
+                    post_params = {}
+
+                # return None for the password key to signal "step 1 only"
+                login_form = Request(
+                    url,
+                    method=method,
+                    post_params=post_params,
+                    get_params=get_params,
+                    encoding=self._encoding,
+                    referer=self._url,
+                    enctype=enctype,
+                )
+                return login_form, username_keys[0], None
+                
+
         all_inputs = self._soup.find_all("input", attrs={"name": True})
-        pw_idxs = [i for i, inp in enumerate(all_inputs)
-                   if inp.attrs.get("type", "").lower() == "password"]
-        user_idxs = [i for i, inp in enumerate(all_inputs)
-                     if inp.attrs.get("type", "").lower() in ("email","text")
-                        or any(tok in inp.attrs.get("name","").lower() for tok in ("user","login","mail"))
-                        or any(tok in inp.attrs.get("id","").lower() for tok in ("user","login","mail"))]
+        ui = next(
+            (i for i, inp in enumerate(all_inputs)
+            if inp.attrs.get("type", "").lower() in ("email","text")
+                or any(tok in inp.attrs.get("name","").lower() for tok in ("user","login","mail"))
+                or any(tok in inp.attrs.get("id","").lower() for tok in ("user","login","mail"))),
+            None
+        )
+        pi = next(
+            (i for i, inp in enumerate(all_inputs)
+            if inp.attrs.get("type", "").lower() == "password"),
+            None
+        )
 
-        if pw_idxs and user_idxs:
-            ui = user_idxs[0]
-            pi = pw_idxs[0]
+        if ui is not None and pi is not None:
+            username_key = all_inputs[ui]["name"]
+            password_key = all_inputs[pi]["name"]
 
-            post_params = []
-            for inp in all_inputs:
-                n = inp["name"]
-                v = inp.get("value", "")
-                post_params.append([n, v])
+            post_params = {
+                inp["name"]: inp.get("value", "")
+                for inp in all_inputs
+            }
 
             login_req = Request(
                 url=self._url,
                 method="POST",
-                get_params=[],
+                get_params={},
                 post_params=post_params,
                 encoding=self._encoding,
                 referer=self._url,
                 enctype="application/x-www-form-urlencoded"
             )
-            return login_req, ui, pi
+            return login_req, username_key, password_key
 
-        return None, 0, 0
+        return None, None, None
 
     
     
-    def extract_disconnect_urls(self):
-        """
-        Extract all the disconnect urls on the given page and returns them.
-        """
+    def disconnect_urls(self):
         disconnect_urls = []
         for link in self.links:
             if re.search(DISCONNECT_REGEX, link) is not None:
                 disconnect_urls.append(link)
         return disconnect_urls
 
-    def is_logged_in(self) -> bool:
+    def logged_in(self) -> bool:
         # If we find logging errors on the page
-        if self._soup.find(string=re.compile(CONNECT_ERROR_REGEX)) is not None:
-            return False
-        # If we find a disconnect button on the page
+        for regex in CONNECT_ERROR_REGEX:
+            if self._soup.find(string=regex) is not None:
+                return False
+            # If we find a disconnect button on the page
         return self._soup.find(string=re.compile(DISCONNECT_REGEX)) is not None
 
     

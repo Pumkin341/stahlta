@@ -50,26 +50,39 @@ from components.web.crawler import CrawlerConfig, Crawler
 
 #print(urljoin("http://juice-shop.com:3000/#/", '/login', allow_fragments=True))
 
-async def main():
-    request = Request("http://juice-shop.com:3000/login")
+# async def main():
+#     request = Request("http://juice-shop.com:3000/login")
 
-    async with async_playwright() as p:
-        browser = await p.chromium.launch()
-        context = await browser.new_context()
+#     async with async_playwright() as p:
+#         browser = await p.chromium.launch()
+#         context = await browser.new_context()
 
-        # 1) give the crawler your BrowserContext
-        crawler = Crawler.client(CrawlerConfig(request, context=context))
+#         # 1) give the crawler your BrowserContext
+#         crawler = Crawler.client(CrawlerConfig(request, context=context))
 
-        # 2) manually verify via Playwright
-        page = await context.new_page()
-        await page.goto(request.url, wait_until='networkidle')
-        #print("Playwright DOM:\n", await page.content())
+#         # 2) manually verify via Playwright
+#         page = await context.new_page()
+#         await page.goto(request.url, wait_until='networkidle')
+#         #print("Playwright DOM:\n", await page.content())
 
-        # 3) now crawler.get() will do the same
-        response = await crawler.get(request)
-        soup = BeautifulSoup(response.content, 'html.parser')
-        print("Crawler DOM:\n", soup.prettify())
+#         # 3) now crawler.get() will do the same
+#         response = await crawler.get(request)
+#         soup = BeautifulSoup(response.content, 'html.parser')
+#         print("Crawler DOM:\n", soup.prettify())
 
-asyncio.run(main())
+# asyncio.run(main())
         
-    
+
+# dictt = {
+#     "username": "admin",
+#     "password": "admin"
+# }
+# print(dictt)
+# print(dictt.items())
+
+# for key, value in dictt:
+#     print(key, value)
+
+client = httpx.Client(cookies= {'name': 'PHPSESSID', 'value': 'j6123fm7p5frllciu0jgpsvpme', 'domain': '192.168.224.1', 'path': '/', 'expires': 1747760583.100685, 'httpOnly': True, 'secure': False, 'sameSite': 'Strict'})
+response = client.get("http://192.168.224.1/DVWA/login.php")
+print(response.text)
