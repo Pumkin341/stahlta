@@ -7,18 +7,20 @@ from http.cookiejar import CookieJar, Cookie
 
 
 async def log_in(crawler_config, username, password, login_url):
-        
+    
+    disconnect_urls = []
+    cookie_jar = None
     async with Crawler.client(crawler_config) as crawler:
         # try the login url
         try:
             response = await crawler.send(Request(login_url))
             text = response.text
         
-        except ConnectionError:
+        except Exception:
             logger.error(f"Connection error while trying to access {login_url}")
             return False, None, None, []
         
-        finally:
+        else:
             
             if crawler_config.context:          
                 cookie_jar = await build_cookiejar_from_context(crawler_config.context)
@@ -92,7 +94,6 @@ async def log_in(crawler_config, username, password, login_url):
                     await apply_cookiejar_to_context(cookie_jar, crawler_config.context)
                 
                 disconnect_urls = login_html.disconnect_urls()
-                disconnect_urls.append(req_login.url)
             
             else:
                 logger.warning('Login has NOT been successful\n')

@@ -27,7 +27,7 @@ class Request():
         self._resource_path = urlunparse((parts.scheme, parts.netloc, path, parts.params, '', ''))
         
         self._fragment = parts.fragment or ""
-        self._file_path = parts.path
+        self._path = parts.path
         self._netloc = parts.netloc
         self._scheme = parts.scheme
         self._hostname = parts.hostname
@@ -131,7 +131,7 @@ class Request():
         their_files = sorted(tuple(fp) for fp in other.file_params)
         
         return (self._method == other.method and
-                self._resource_path == other.path and
+                self._resource_path == other.resource_path and
                 same_get_keys and
                 same_post_keys and
                 our_files == their_files)
@@ -149,15 +149,15 @@ class Request():
     
     @property
     def path(self):
-        return self._resource_path
+        return self._path
     
     @property
     def fragment(self):
         return self._fragment
     
     @property
-    def file_path(self):
-        return self._file_path
+    def resource_path(self):
+        return self._resource_path
     
     @property
     def netloc(self):

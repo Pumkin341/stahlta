@@ -88,11 +88,25 @@ class Stahlta:
     async def iter_resources(self):
         for request, response in self._resources:
             yield request, response
+            
+    async def test_connection(self):
+        
+        async with Crawler.client(self.crawler_config) as crawler:
+            logger.info(f"Connecting to {self._base_request.url} ...")
+            try:
+                response = await crawler.send(self._base_request, timeout=self._timeout)
+                
+            except Exception as e:
+                logger.error(f"Cannot connect to the URL {self._base_request.url}: {e}")
+                return False
+            
+        logger.info(f"Connected to {self._base_request.url} with status code {response.status_code}")
+        return True
     
-    async def browse(self, stop_event : asyncio.Event, parallelism = 10):
+    async def browse(self, stop_event : asyncio.Event, parallelism = 15):
         
         stop_event.clear()
-        self.get_robot_urls()
+        #self.get_robot_urls()
     
         explorer = Explorer(self.crawler_config, self._scope, stop_event, bad_urls = self.bad_urls, parallelism = parallelism)
             
@@ -106,17 +120,15 @@ class Stahlta:
             await self.close_browser()
             
         self.crawler_config.context = None
+        self.crawler_config.cookies = explorer._cookies
     
         #[print(request, response) for request, response in self._resources]
         
     async def run_attack(self, attack_obj):
         async for request, response in self.iter_resources():
-            try:
-                await attack_obj.run(request, response)
+            await attack_obj.run(request, response)
                 
-            except Exception as e:
-                logger.error(f"Error running attack {attack_obj.name}: {e}")
-                continue
+            
     
     async def attack(self):
         registry = BaseAttack.load_attacks()
@@ -124,7 +136,6 @@ class Stahlta:
         names = [n.lower() for n in self._attack_list]
         if 'all' in names:
             attack_classes = list(registry.values())
-            print(attack_classes)
             
         else:
             attack_classes = []

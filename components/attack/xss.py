@@ -1,5 +1,6 @@
 import re
 import difflib
+import uuid
 import html
 import asyncio
 from urllib.parse import quote, unquote
@@ -27,115 +28,120 @@ class XSS(BaseAttack):
         self._found_event = None
 
     async def run(self, request: Request, response):
-        
+        # only scan if there are parameters
         if not request.get_params and not request.post_params:
             return
-        
-        raw = await self._get_text(response)
-        self._original_body = html.unescape(unquote(raw)).lower()
-        self._baseline = self._original_body.splitlines()
 
         tasks = []
         for payload in self.iter_payloads(self.wordlist_path):
-            for mutated, param in self.mutate_request(request, payload, mode='replace'):
-                tasks.append(asyncio.create_task(self.test_xss(mutated, param, payload)))
-            
+            # generate unique markers to avoid false positives
+            marker = uuid.uuid4().hex[:8]
+            left = f"__{marker}__"
+            right = f"__{marker[::-1]}__"
+            wrapped = f"{left}{payload}{right}"
+
+            for mutated, param in self.mutate_request(request, wrapped, mode='replace'):
+                tasks.append(
+                    asyncio.create_task(
+                        self.test_xss_reflected(mutated, param, payload, left, right)
+                    )
+                )
+
         if not tasks:
             return
 
+        # await tasks and cancel on first found
         for fut in asyncio.as_completed(tasks):
             try:
-                found = await fut
+                if await fut:
+                    for t in tasks:
+                        if not t.done():
+                            t.cancel()
+                    return
             except asyncio.CancelledError:
                 continue
-            except Exception as e:
-                pass
+            except Exception:
+                continue
 
-            if found:
-                for t in tasks:
-                    if not t.done():
-                        t.cancel()
-                return 
-
-    async def test_xss(self, mutated: Request, param: str, payload: str) -> bool:
-        
+    async def test_xss_reflected(self,
+                                 mutated: Request,
+                                 param: str,
+                                 orig_payload: str,
+                                 left: str,
+                                 right: str) -> bool:
         async with self.semaphore:
             try:
-                new_resp = await self.crawler.send(mutated, timeout=3)
+                new_resp = await self.crawler.send(mutated, timeout=5)
             except Exception:
                 return False
 
-        #logger.debug(mutated)
         ctype = new_resp.headers.get('content-type', '').lower()
-        if 'json' in ctype:
+        if 'html' not in ctype:
             return False
 
-        new_raw = await self._get_text(new_resp)
-        new_body = html.unescape(unquote(new_raw)).lower()
-        new_lines = new_body.splitlines()
+        # use raw HTML response (without unescaping entities)
+        raw = await self._get_text(new_resp)
+        body = raw
 
-        diff = difflib.ndiff(self._baseline, new_lines)
-        injected = [
-            line[2:] for line in diff
-            if line.startswith('+ ') and 'st4r7s' in line and '3nd' in line
-        ]
-
-        found = False
-        if injected:
-            m = re.search(r'st4r7s(.*?)3nd', injected[0])
-            if m:
-                snippet = f"st4r7s{m.group(1)}3nd"
-                efficiency = fuzz.partial_ratio(snippet, payload.lower())
-                found = True
-        else:
-            # fallback: raw payload unescaped?
-            if payload.lower() in new_body:
-                snippet = payload.lower()
-                efficiency = 100
-                found = True
-
-        if not found or efficiency < 30:
+        # confirm markers present
+        if left not in body or right not in body:
             return False
 
-        # 5) Map efficiency → confidence
-        if efficiency >= 98:
-            confidence = 'CRITICAL'
-        elif efficiency >= 90:
-            confidence = 'HIGH'
-        elif efficiency >= 75:
-            confidence = 'MEDIUM'
-        elif efficiency >= 50:
-            confidence = 'LOW'
-        else:
+        # extract snippet between markers
+        snippet_re = re.escape(left) + r"(.*?)" + re.escape(right)
+        match = re.search(snippet_re, body, re.DOTALL)
+        if not match:
+            return False
+        reflected = match.group(1)
+
+        # ensure original payload reflection (raw) is present
+        if orig_payload not in reflected:
             return False
 
-        # 6) Log exactly as before
-        context = self._detect_context(self._original_body, param, payload)
-        logger.log(confidence, "XSS Vulnerability Found")
-        logger.log("VULN", f"Target:     {mutated.method} {mutated.url}")
+        # detect injection context
+        context = self._detect_context(body, param, reflected)
+
+        # context-specific sanity checks on RAW snippet
+        if context == 'html':
+            # require literal HTML tags
+            if not re.search(r'<[a-zA-Z/][^>]*>', reflected):
+                return False
+        elif context == 'attribute':
+            # require event handler or attribute-break pattern
+            if not re.search(r'on\w+\s*=|"\s*>|>$', reflected):
+                return False
+        elif context == 'script':
+            # require JS keywords or literal <script>
+            if not re.search(r'\b(alert|prompt|confirm)\b|<script', reflected):
+                return False
+
+        # confirmed reflected XSS
+        confidence = 'CRITICAL'
+        logger.log(confidence, "Reflected XSS Vulnerability Found")
+        logger.log("VULN", f"Target:     {mutated.url}")
+        logger.log("VULN", f"Method:     {mutated.method}")
         logger.log("VULN", f"Parameter:  {param}")
-        logger.log("VULN", f"Payload:    {payload}")
-        logger.log("VULN", f"Efficiency: {efficiency}%")
+        logger.log("VULN", f"Payload:    {orig_payload}")
         logger.log("VULN", f"Context:    {context}")
         logger.log("VULN", "")
-
         return True
 
     async def _get_text(self, resp):
         try:
             return resp.text
         except AttributeError:
-            return resp.content.decode(resp.encoding or 'utf-8', errors='ignore')
+            return resp.content.decode(
+                resp.encoding or 'utf-8', errors='ignore'
+            )
 
-    def _detect_context(self, body: str, name: str, orig: str) -> str:
-        idx = body.find(orig.lower())
-
+    def _detect_context(self, body: str, name: str, snippet: str) -> str:
+        idx = body.find(snippet)
+        # script context
         for m in re.finditer(r'(?is)<script[^>]*>.*?</script>', body):
             if m.start() <= idx <= m.end():
                 return 'script'
-
-        attr_re = rf'\b{name}\s*=\s*"[^"]*{re.escape(orig.lower())}[^"]*"'
-        if re.search(attr_re, body):
+        # attribute context
+        attr_pattern = rf"<\w+[^>]*\b{name}\s*=\s*['\"][^'\"]*{re.escape(snippet)}[^'\"]*['\"]"
+        if re.search(attr_pattern, body, re.IGNORECASE):
             return 'attribute'
-
         return 'html'

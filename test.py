@@ -83,6 +83,6 @@ from components.web.crawler import CrawlerConfig, Crawler
 # for key, value in dictt:
 #     print(key, value)
 
-client = httpx.Client(cookies= {'name': 'PHPSESSID', 'value': 'j6123fm7p5frllciu0jgpsvpme', 'domain': '192.168.224.1', 'path': '/', 'expires': 1747760583.100685, 'httpOnly': True, 'secure': False, 'sameSite': 'Strict'})
-response = client.get("http://192.168.224.1/DVWA/login.php")
-print(response.text)
+# client = httpx.Client(cookies= {'name': 'PHPSESSID', 'value': 'j6123fm7p5frllciu0jgpsvpme', 'domain': '192.168.224.1', 'path': '/', 'expires': 1747760583.100685, 'httpOnly': True, 'secure': False, 'sameSite': 'Strict'})
+# response = client.get("http://192.168.224.1/DVWA/login.php")
+# print(response.text)

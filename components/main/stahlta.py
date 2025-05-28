@@ -85,7 +85,14 @@ async def stahlta_main():
     printBanner()
     args = parse_cli()
         
-    url = add_slash_to_path(args.url)
+    parts = urlparse(args.url)
+    
+    if not parts.query:
+        url = add_slash_to_path(args.url)
+    else:
+        url = args.url
+    url = args.url
+        
     if not validate_url_endpoint(url):
         sys.exit(1)
         
@@ -98,6 +105,14 @@ async def stahlta_main():
    
     base_request = Request(url)
     stal = Stahlta(base_request, scope= args.scope)
+        
+    if not await stal.test_connection():
+        sys.exit(1)
+        
+    stal.headless = args.headless
+    if args.headless == 'yes':
+        logger.info(f'Headless mode: {args.headless.title()} \n')
+        await stal.init_browser()
     
     if args.wordlist:
         if validate_wordlist(args.wordlist):
@@ -105,10 +120,6 @@ async def stahlta_main():
         else:
             sys.exit(1)
             
-    stal.headless = args.headless
-    if args.headless == 'yes':
-        logger.info(f'Headless mode: {args.headless.title()} \n')
-        await stal.init_browser()
             
     if args.login_url:
         if not args.username or not args.password:
@@ -130,8 +141,6 @@ async def stahlta_main():
         logger.error('Please provide --login_url for the authentication.')
         sys.exit(1)
         
-        
-            
     stal.max_depth = args.depth
     stal.timeout = args.timeout
     stal.attack_list = args.attack

@@ -35,6 +35,8 @@ class BaseAttack:
             for line in lines:
                 if not line.strip():
                     continue
+                if line.startswith('#'):
+                    continue
                 
                 yield line.strip()
     
@@ -50,8 +52,8 @@ class BaseAttack:
             module_path = f"components.attack.{key}"
             try:
                 mod = importlib.import_module(module_path)
-            except ImportError:
-                logger.error(f"Failed to import module: {module_path}")
+            except ImportError as e:
+                logger.error(f"Failed to import module: {module_path} - {e}")
                 continue
 
             # look for the one BaseAttack subclass in that module
@@ -73,6 +75,8 @@ class BaseAttack:
         for param, vals in request.get_params.items():
             new_get_params = copy.deepcopy(request.get_params)
             orig = vals[0] if isinstance(vals, (list, tuple)) else vals
+            if not orig:
+                orig = ''
             
             if mode == 'append':
                 new_get_params[param] = [orig + payload]

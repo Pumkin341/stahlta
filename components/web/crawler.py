@@ -53,7 +53,7 @@ def retry(times: int = 3, delay: float = 1.0, exceptions: tuple = (httpx.Transpo
     return decorator
 
 class Crawler:
-    def __init__(self, base_request : Request, client : httpx.AsyncClient, context : BrowserContext, timeout : int = 5):
+    def __init__(self, base_request : Request, client : httpx.AsyncClient, context : BrowserContext, timeout : int = 3):
         
         self._base_request = base_request
         self._client = client
@@ -119,7 +119,7 @@ class Crawler:
         
         # Headless
         page = None
-        timeout = timeout or self._timeout
+        timeoutt = timeout or self._timeout
         
         if self._context:
             try:
@@ -130,7 +130,7 @@ class Crawler:
                 pr = await page.goto(
                     base_request.url,
                     wait_until='domcontentloaded',
-                    timeout=timeout * 1000
+                    timeout=timeoutt * 1000
                 )
                 content = await page.content()
                 
@@ -164,7 +164,7 @@ class Crawler:
                 'GET',
                 base_request.url,
                 headers=headers or {},
-                timeout=timeout or self._timeout
+                timeout=timeoutt or self._timeout
             )
             
             return httpx.Response(
@@ -175,17 +175,17 @@ class Crawler:
             )
             
         # httpx
-        get_request = self._client.build_request('GET', base_request.url, headers=headers, timeout = timeout)
+        get_request = self._client.build_request('GET', base_request.url, headers=headers, timeout = timeoutt)
         
         try:
-            response = await self._client.send(get_request, follow_redirects = redirect)
+            response = await self._client.send(get_request, follow_redirects= redirect)
             
-        except httpx.TransportError as e:
-            logger.error(f"GET HTTPX Transport Error: {base_request}: {e!r}", exc_info=True)
-            raise e
+        except httpx.InvalidURL as e:
+            logger.debug(f"Skipping invalid URL mutation {get_request.url!r}: {e!r}")
+            raise  # or just return None so your scanner skips it
         
-        except Exception as e:
-            logger.error(f"GET HTTPX Error: {base_request}: {e}")
+        except httpx.TransportError as e:
+            #logger.error(f"GET HTTPX Transport Error: {base_request}: {e!r}")
             raise e
         
         return response
@@ -203,9 +203,20 @@ class Crawler:
         try:
             response = await self._client.send(post_request, follow_redirects = redirect)
 
+        except httpx.InvalidURL as e:
+            # this is just a bad mutation (e.g. unescaped `;`), not a network failure
+            logger.debug(f"Skipping invalid-URL mutation for {base_request}: {e!r}")
+            return None  # let your caller ignore it
+
         except httpx.TransportError as e:
-            logger.error(f"POST on url: {base_request}: {e}")
-            raise e
+            # real network/transport issue
+            #logger.error(f"Transport error sending {base_request}: {e!r}")
+            raise
+
+        except httpx.RequestError as e:
+            # other HTTPX request problems
+            logger.error(f"HTTPX request error on {base_request}: {e!r}")
+            raise
         
         return response
     
@@ -258,6 +269,12 @@ class Crawler:
     @cookie_jar.setter
     def cookie_jar(self, cookie_jar):
         self._client.cookies = cookie_jar
+        
+    @property
+    def cookies(self):
+        if self.context:   
+            return self.context.cookies
+        return self._client.cookies
     
     @property
     def context(self):

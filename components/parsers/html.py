@@ -274,9 +274,7 @@ class HTML:
             password_keys = []
 
             for input_field in form.find_all("input", attrs={"name": True}):
-                print(input_field)
                 input_type = input_field.attrs.get("type", "text").lower()
-                print(input_type)
                 name = input_field.attrs["name"]
                 name_l = name.lower()
                 id_l   = input_field.attrs.get("id", "").lower()
@@ -293,7 +291,6 @@ class HTML:
                 if input_type == "password":
                     password_keys.append(name)
                     
-            print(username_keys, password_keys)
             if len(username_keys) == 1 and len(password_keys) == 1:
                 inputs = form.find_all("input", attrs={"name": True})
                 url     = self._urljoin(form.attrs.get("action", "").strip() or self._url)

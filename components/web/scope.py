@@ -19,7 +19,7 @@ class Scope:
             url = check_url
         
         if self._scope == "folder":
-            checked = url.startswith(self._base_request.path)
+            checked = url.startswith(self._base_request.resource_path)
         
         elif self._scope == "domain":
             checked = self._base_request.hostname == urlparse(url).hostname
@@ -28,12 +28,15 @@ class Scope:
             checked = urlparse(url).hostname == self._base_request.hostname
             
         elif self._scope == "page":
-            checked = url.split("?")[0] == self._base_request.path
+            checked = urlparse(url).path == self._base_request.path
             
         elif self._scope == "parameter":
-            checked = False
-            #checked = urlparse(url).query == self._base_request.url.split("?")[1]
-            
+            split = self._base_request.url.split("?")
+            if len(split)>1:
+                checked = urlparse(url).query == self._base_request.url.split("?")[1]
+            else:
+                checked = False
+                
         if checked is None:
             checked = url == self._base_request.url
             

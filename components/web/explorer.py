@@ -6,6 +6,7 @@ from urllib.parse import urljoin
 from components.web.request import Request
 from components.web.scope import Scope
 from components.web.crawler import CrawlerConfig, Crawler
+from components.web.login import build_cookiejar_from_context
 
 from components.parsers.html import HTML
 from components.parsers.dynamic import js_redirections, dynamic_links
@@ -25,7 +26,7 @@ class Explorer:
         
         self._max_depth = 30
         self._max_pagesize = 3000000
-        self._cookies = {}
+        self._cookies = None 
         self._hostnames = set()
         
         self._processed_requests = set()
@@ -58,7 +59,7 @@ class Explorer:
         if response_type.startswith('text/') or response_type.startswith('application/xml'):
             
             html = HTML(response.text, str(response.url))
-            allowed_links.extend(self._scope.filter(html.links))    
+            allowed_links.extend(self._scope.filter(html.links))   
             allowed_links.extend(self._scope.filter(html.js_redirections + html.html_redirections))
      
             for extra_url in self._scope.filter(html.extra_urls):
@@ -189,10 +190,16 @@ class Explorer:
                     t.cancel()
     
     def _is_allowed(self, url: str) -> bool:
-        return not any(url.startswith(dis) for dis in self._bad_urls)
+        if self._bad_urls:
+            return not any(url.startswith(dis) for dis in self._bad_urls)
+        else:
+            return True
             
     async def clean(self):
-        self._cookiejar = self._crawler.cookie_jar
+        if self._crawler.context:
+            self._cookies = await build_cookiejar_from_context(self._crawler.context)
+        else:
+            self._cookies = self._crawler.cookie_jar
         await self._crawler.close()
 
     @property
