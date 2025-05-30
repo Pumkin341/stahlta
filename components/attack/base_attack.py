@@ -69,10 +69,15 @@ class BaseAttack:
         return registry
 
 
-    def mutate_request(self, request: Request, payload: str, mode: str = 'append'):
-            
+    def mutate_request(self, request: Request, payload: str, mode: str = 'append', parameter = None):
+        
         new_url = request.url.split('?', 1)[0]
+       
         for param, vals in request.get_params.items():
+            
+            if parameter and param != parameter:
+                continue
+            
             new_get_params = copy.deepcopy(request.get_params)
             orig = vals[0] if isinstance(vals, (list, tuple)) else vals
             if not orig:
@@ -94,22 +99,25 @@ class BaseAttack:
                 post_params=request.post_params,
                 file_params=request.file_params,
             )
-        
+  
             yield new_req, param
             
-        for key, vals in request.post_params.items():
+        for param, vals in request.post_params.items():
+            if parameter and param != parameter:
+                continue
+            
             new_req = copy.deepcopy(request)
 
             if mode == 'append':
                 if isinstance(vals, (list, tuple)):
-                    new_req.post_params[key] = [v + payload for v in vals]
+                    new_req.post_params[param] = [v + payload for v in vals]
                 else:
-                    new_req.post_params[key] = vals + payload
+                    new_req.post_params[param] = vals + payload
                     
             elif mode == 'replace':
-                new_req.post_params[key] = [payload]
+                new_req.post_params[param] = [payload]
 
-            yield new_req, key
+            yield new_req, param
 
 
     def search_cve(self, query):

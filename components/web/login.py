@@ -126,6 +126,7 @@ async def build_cookiejar_from_context(context) -> CookieJar:
             rfc2109=False,
         )
         jar.set_cookie(cookie)
+        
     return jar
 
 async def apply_cookiejar_to_context(jar: CookieJar, context) -> None:

@@ -3,7 +3,7 @@ import sys
 import signal
 from urllib.parse import urlparse
 
-from components.main.logger import logger
+from components.main.logger import logger, start_status, stop_status, attack_status
 from components.main.stal_controller import Stahlta
 from components.web.request import Request
 from components.web.login import log_in
@@ -84,7 +84,6 @@ async def stahlta_main():
 
     printBanner()
     args = parse_cli()
-        
     parts = urlparse(args.url)
     
     if not parts.query:
@@ -153,9 +152,16 @@ async def stahlta_main():
         pass
 
     try:
+        start_status()
         await stal.browse(stop_event)
+        stop_status()
+        print()
         logger.info(f"Scan completed, found {stal.count_resources()} resources. \n")
+        
+        attack_status()
         await stal.attack()
+        stop_status()
+        print()
         
     finally:
         try:

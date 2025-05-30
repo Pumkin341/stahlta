@@ -10,7 +10,7 @@ from urllib.error import URLError
 from collections import deque
 from playwright.async_api import async_playwright
 
-from components.main.logger import logger
+from components.main.logger import logger, attack_update, status, attack_status
 from components.web.request import Request
 from components.web.crawler import CrawlerConfig, Crawler, HTTP_Auth
 from components.web.explorer import Explorer
@@ -152,6 +152,7 @@ class Stahlta:
             for attack_obj in instances:
                 
                 logger.log('ATTACK', f"Running attack: {attack_obj.name} \n")
+                attack_update(attack_obj.name.upper())
                 
                 task = asyncio.create_task(self.run_attack(attack_obj))
                 try:

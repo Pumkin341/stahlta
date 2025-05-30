@@ -11,7 +11,7 @@ from components.web.login import build_cookiejar_from_context
 from components.parsers.html import HTML
 from components.parsers.dynamic import js_redirections, dynamic_links
 
-from components.main.logger import logger
+from components.main.logger import logger, update_status
 
 from components.web import EXCLUDED_EXTENSIONS
 
@@ -110,8 +110,8 @@ class Explorer:
             self._processed_requests.add(request)
             self._hostnames.add(request.hostname)
             
-            #logger.info(f"Request {request.url:<80} Method {request.method:<5} Depth {request.depth:<5}")
-            logger.debug(request)
+            #logger.debug(request)
+            update_status(request.url)
 
             try:
                 response = await self._crawler.send(request)
@@ -201,10 +201,6 @@ class Explorer:
         else:
             self._cookies = self._crawler.cookie_jar
         await self._crawler.close()
-
-    @property
-    def cookie_jar(self):
-        return self._cookiejar
        
     @property    
     def max_depth(self):

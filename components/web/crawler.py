@@ -94,8 +94,7 @@ class Crawler:
                 authentification = httpx.BasicAuth(config.http_auth.username, config.http_auth.password)
             elif config.http_auth.method == 'digest':
                 authentification = httpx.DigestAuth(config.http_auth.username, config.http_auth.password)
-                
-        
+  
         client = httpx.AsyncClient(
             auth= authentification,
             headers = headers,
@@ -247,6 +246,17 @@ class Crawler:
 
     # Setters and Getters
     @property
+    def cookie_jar(self) -> CookieJar:
+        return self._client.cookies.jar
+    
+    @cookie_jar.setter
+    def cookie_jar(self, cookie_jar : CookieJar):
+        self._client.cookies = cookie_jar
+        
+    @property
+    def cookies(self) -> httpx.Cookies:
+        return self._client.cookies
+    @property
     def user_agent(self):
         return self._client.headers['User-Agent']
     
@@ -262,19 +272,6 @@ class Crawler:
     def user_agent(self, value):
         self._client.headers['User-Agent'] = value
         
-    @property
-    def cookie_jar(self):
-        return self._client.cookies.jar
-    
-    @cookie_jar.setter
-    def cookie_jar(self, cookie_jar):
-        self._client.cookies = cookie_jar
-        
-    @property
-    def cookies(self):
-        if self.context:   
-            return self.context.cookies
-        return self._client.cookies
     
     @property
     def context(self):

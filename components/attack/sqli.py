@@ -146,11 +146,13 @@ class SQLInjection(BaseAttack):
 
 
     async def test_cookies(self, request, response):
-        jar = self.crawler.cookies
-        cookies = jar.items()
+       
+        cookies = self.crawler.cookies.jar
         
-        for name, val in cookies:
+        for cookie in cookies:
             trials = []
+            name = cookie.name
+            val = cookie.value
             if name in self.tested_cookies:
                 continue
             self.tested_cookies.add(name)
@@ -178,8 +180,8 @@ class SQLInjection(BaseAttack):
             for new_val, desc in trials:
                 hdrs = self.crawler.headers  
                 hdrs['Cookie'] = "; ".join(
-                    f"{k}={new_val if k == name else v}"
-                    for k, v in cookies
+                    f"{cookie.name}={new_val if cookie.name == name else cookie.value}"
+                    for cookie in cookies
                 )
 
                 try:
