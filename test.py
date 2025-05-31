@@ -12,14 +12,14 @@
 
 
 
-import asyncio
-from bs4 import BeautifulSoup
-from playwright.async_api import async_playwright
-import httpx
-from urllib.parse import urljoin
+# import asyncio
+# from bs4 import BeautifulSoup
+# from playwright.async_api import async_playwright
+# import httpx
+# from urllib.parse import urljoin
 
-from components.web.request import Request
-from components.web.crawler import CrawlerConfig, Crawler
+# from components.web.request import Request
+# from components.web.crawler import CrawlerConfig, Crawler
 
 # async def main1():
 #     async with async_playwright() as p:
@@ -86,3 +86,11 @@ from components.web.crawler import CrawlerConfig, Crawler
 # client = httpx.Client(cookies= {'name': 'PHPSESSID', 'value': 'j6123fm7p5frllciu0jgpsvpme', 'domain': '192.168.224.1', 'path': '/', 'expires': 1747760583.100685, 'httpOnly': True, 'secure': False, 'sameSite': 'Strict'})
 # response = client.get("http://192.168.224.1/DVWA/login.php")
 # print(response.text)
+
+from rich.console import Console
+console = Console()
+
+console.print([1, 2, 3])
+console.print("[bold black on red]Looks like a link")
+console.print(locals())
+console.print("FOO", style="white on blue")

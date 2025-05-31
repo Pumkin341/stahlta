@@ -11,7 +11,7 @@ from components.web.login import build_cookiejar_from_context
 from components.parsers.html import HTML
 from components.parsers.dynamic import js_redirections, dynamic_links
 
-from components.main.logger import logger, update_status
+from components.main.console import status_update, log_error
 
 from components.web import EXCLUDED_EXTENSIONS
 
@@ -110,18 +110,17 @@ class Explorer:
             self._processed_requests.add(request)
             self._hostnames.add(request.hostname)
             
-            #logger.debug(request)
-            update_status(request.url)
+            status_update(request.url)
 
             try:
                 response = await self._crawler.send(request)
             
             except Exception as e:
-                logger.error(e)
+                log_error(e)
                 return False, [], None
             
             except (ConnectionError, httpx.RequestError) as e:
-                logger.error(e)
+                log_error(e)
                 return False, [], None
             
             try:
@@ -171,7 +170,7 @@ class Explorer:
                         except asyncio.CancelledError:
                             continue
                         except Exception as e:
-                            logger.error(e)
+                            log_error(e)
                             continue
 
                         if success:

@@ -10,7 +10,7 @@ from urllib.error import URLError
 from collections import deque
 from playwright.async_api import async_playwright
 
-from components.main.logger import logger, attack_update, status, attack_status
+from components.main.console import console, status_update_attack, log_error, log_info, log_warning, log_attack, log_success
 from components.web.request import Request
 from components.web.crawler import CrawlerConfig, Crawler, HTTP_Auth
 from components.web.explorer import Explorer
@@ -59,7 +59,7 @@ class Stahlta:
             return
             
         except Exception as e:
-            logger.warning(f"Could not fetch or parse robots.txt ({robots_url})")
+            log_warning(f"Could not fetch or parse robots.txt ({robots_url})")
             return
         
         if parser.disallow_all:
@@ -92,15 +92,15 @@ class Stahlta:
     async def test_connection(self):
         
         async with Crawler.client(self.crawler_config) as crawler:
-            logger.info(f"Connecting to {self._base_request.url} ...")
+            log_info(f"Connecting to {self._base_request.url} ...")
             try:
                 response = await crawler.send(self._base_request, timeout=self._timeout)
                 
             except Exception as e:
-                logger.error(f"Cannot connect to the URL {self._base_request.url}: {e}")
+                log_error(f"Cannot connect to the URL {self._base_request.url}: {e}")
                 return False
             
-        logger.info(f"Connected to {self._base_request.url} with status code {response.status_code}")
+        log_success(f"Connected to {self._base_request.url} with status code {response.status_code}")
         return True
     
     async def browse(self, stop_event : asyncio.Event, parallelism = 15):
@@ -151,8 +151,8 @@ class Stahlta:
 
             for attack_obj in instances:
                 
-                logger.log('ATTACK', f"Running attack: {attack_obj.name} \n")
-                attack_update(attack_obj.name.upper())
+                log_attack(f"Running attack: {attack_obj.name.upper()} \n")
+                status_update_attack(attack_obj.name.upper())
                 
                 task = asyncio.create_task(self.run_attack(attack_obj))
                 try:
@@ -160,7 +160,7 @@ class Stahlta:
                     print()
                     
                 except Exception as e:
-                    logger.error(f"Error running attack {attack_obj.name}: {e}")
+                    log_error(f"Error running attack {attack_obj.name}: {e}")
                     continue
     
     async def init_browser(self):
@@ -170,7 +170,7 @@ class Stahlta:
             self.crawler_config.context = await self._browser.new_context()
             
         except Exception as e:
-            logger.error(f"Error initializing headless browser: {e}")
+            log_error(f"Error initializing headless browser: {e}")
             return
     
     async def close_browser(self):

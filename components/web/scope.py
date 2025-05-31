@@ -1,6 +1,5 @@
 
 from components.web.request import Request
-from components.main.logger import logger
 from urllib.parse import urlparse
 from tld import get_tld
 

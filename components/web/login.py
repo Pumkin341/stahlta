@@ -1,8 +1,7 @@
 from components.parsers.html import HTML
 from components.web.request import Request
 from components.web.crawler import Crawler
-from components.main.logger import logger
-
+from components.main.console import log_error, log_success, log_warning
 from http.cookiejar import CookieJar, Cookie
 
 
@@ -17,7 +16,7 @@ async def log_in(crawler_config, username, password, login_url):
             text = response.text
         
         except Exception:
-            logger.error(f"Connection error while trying to access {login_url}")
+            log_error(f"Connection error while trying to access {login_url}")
             return False, None, None, []
         
         else:
@@ -30,7 +29,7 @@ async def log_in(crawler_config, username, password, login_url):
             form, user_key, password_key = html.find_login_form()
             
             if not form or not user_key:
-                logger.error("No login form (or username field) found on the login page")
+                log_error("No login form (or username field) found on the login page")
                 return False, None, None, []
 
             # 2 step auth
@@ -55,7 +54,7 @@ async def log_in(crawler_config, username, password, login_url):
                 form2, _, password_key = html2.find_login_form()
                 
                 if not form2 or password_key is None:
-                    logger.error("Could not find password form after submitting username")
+                    log_error("Could not find password form after submitting username")
                     return False, None, None, []
 
                 form = form2  # switch to the second‐step form
@@ -87,7 +86,7 @@ async def log_in(crawler_config, username, password, login_url):
             state = login_html.logged_in()
             
             if state:
-                logger.success('Login has been successful\n')
+                log_success('Login has been successful\n')
                 
                 cookie_jar = crawler.cookie_jar
                 if crawler_config.context:
@@ -96,7 +95,7 @@ async def log_in(crawler_config, username, password, login_url):
                 disconnect_urls = login_html.disconnect_urls()
             
             else:
-                logger.warning('Login has NOT been successful\n')
+                log_warning('Login has NOT been successful\n')
             
             return state, cookie_jar, start_url, disconnect_urls
 

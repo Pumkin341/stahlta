@@ -9,7 +9,7 @@ from playwright.async_api import BrowserContext
 from playwright._impl._errors import TargetClosedError
 
 from components.web.request import Request
-from components.main.logger import logger
+from components.main.console import log_error, log_debug
 
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36 Edg/134.0.0.0"
 
@@ -85,7 +85,7 @@ class Crawler:
                 ssl_ctx.verify_mode = ssl.CERT_NONE
                 
         except Exception as e:
-            logger.error(f"SSL context error: {e}")
+            log_error(f"SSL context error: {e}")
             ssl_ctx = None
             
         authentification = None
@@ -180,11 +180,11 @@ class Crawler:
             response = await self._client.send(get_request, follow_redirects= redirect)
             
         except httpx.InvalidURL as e:
-            logger.debug(f"Skipping invalid URL mutation {get_request.url!r}: {e!r}")
+            log_debug(f"Skipping invalid URL mutation {get_request.url!r}: {e!r}")
             raise  # or just return None so your scanner skips it
         
         except httpx.TransportError as e:
-            #logger.error(f"GET HTTPX Transport Error: {base_request}: {e!r}")
+            #log_error(f"GET HTTPX Transport Error: {base_request}: {e!r}")
             raise e
         
         return response
@@ -203,18 +203,15 @@ class Crawler:
             response = await self._client.send(post_request, follow_redirects = redirect)
 
         except httpx.InvalidURL as e:
-            # this is just a bad mutation (e.g. unescaped `;`), not a network failure
-            logger.debug(f"Skipping invalid-URL mutation for {base_request}: {e!r}")
+            log_debug(f"Skipping invalid-URL mutation for {base_request}: {e!r}")
             return None  # let your caller ignore it
 
         except httpx.TransportError as e:
-            # real network/transport issue
-            #logger.error(f"Transport error sending {base_request}: {e!r}")
+            #log_error(f"Transport error sending {base_request}: {e!r}")
             raise
 
         except httpx.RequestError as e:
-            # other HTTPX request problems
-            logger.error(f"HTTPX request error on {base_request}: {e!r}")
+            log_error(f"HTTPX request error on {base_request}: {e!r}")
             raise
         
         return response

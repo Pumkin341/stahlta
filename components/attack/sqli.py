@@ -10,8 +10,8 @@ from http.cookiejar import CookieJar
 import copy
 from difflib import SequenceMatcher
 
+from components.main.console import log_error, log_debug, log_vulnerability, log_detail
 from components.attack.base_attack import BaseAttack
-from components.main.logger import logger
 from components.parsers.html import HTML
 from components.web.request import Request
 
@@ -66,7 +66,7 @@ class SQLInjection(BaseAttack):
                 out[kind] = lines
                 
             except Exception as e:
-                logger.error(f"[sqli] cannot load payload file {path}: {e}")
+                log_error(f"[sqli] cannot load payload file {path}: {e}")
                 out[kind] = []
         return out
 
@@ -76,7 +76,7 @@ class SQLInjection(BaseAttack):
         db_regex_map = {}
 
         if not xml_path.exists():
-            logger.error(f"[sqli] error‐regex file not found: {xml_path}")
+            log_error(f"[sqli] error‐regex file not found: {xml_path}")
             return db_regex_map
 
         try:
@@ -96,13 +96,13 @@ class SQLInjection(BaseAttack):
                     try:
                         regex_list.append(re.compile(pat, re.IGNORECASE))
                     except re.error as rex:
-                        logger.error(f"[sqli] invalid regex {pat} for {db_name} in {xml_path}: {rex}")
+                        log_error(f"[sqli] invalid regex {pat} for {db_name} in {xml_path}: {rex}")
 
                 if regex_list:
                     db_regex_map[db_name] = regex_list
 
         except Exception as e:
-            logger.error(f"[sqli] failed to parse {xml_path}: {e}")
+            log_error(f"[sqli] failed to parse {xml_path}: {e}")
 
         return db_regex_map
 
@@ -190,17 +190,17 @@ class SQLInjection(BaseAttack):
                     continue
                 
                 if self._find_error(resp.text):
-                    logger.log('HIGH', "SQL Injection via cookie detected")
-                    logger.log("VULN", f"Target: {request.url}")
-                    logger.log("VULN", f"Cookie mutation: {desc}")
+                    log_vulnerability('HIGH', "SQL Injection via cookie detected")
+                    log_detail("Target",  request.url)
+                    log_detail("Cookie mutation", desc)
                     print()
                     return 
                 
                 if resp.status_code != response.status_code:
-                    logger.log('MEDIUM', "SQL Injection via cookie detected (status code change)")
-                    logger.log("VULN", f"Target: {request.url}")
-                    logger.log("VULN", f"Cookie mutation: {desc}")
-                    logger.log("VULN", f"Status code changed from {response.status_code} to {resp.status_code}")
+                    log_vulnerability('MEDIUM', "SQL Injection via cookie detected (status code change)")
+                    log_detail("Target", request.url)
+                    log_detail("Cookie mutation", desc)
+                    log_detail(f"Status code changed from {response.status_code} to {resp.status_code}")
                     print()
                     return 
 
@@ -317,7 +317,7 @@ class SQLInjection(BaseAttack):
         
         if param == 'user_token':
             return False
-        #logger.debug(f"{mutated} Testing {param} (error) with payload {payload!r}")
+        #log_debug(f"{mutated} Testing {param} (error) with payload {payload!r}")
         
         try:
             async with self.semaphore:
@@ -325,22 +325,20 @@ class SQLInjection(BaseAttack):
                 text = resp.text
             
         except Exception as e:
-            logger.error(f"Error-based request failed {mutated}: {e}")
+            log_error(f"Error-based request failed {mutated}: {e}")
             return False
         
         else:
             vulnerability = self._find_error(text)
 
             if vulnerability and not await self._false_positive(request):
-                logger.critical(f'SQL Injection Error Based Detected')
+                log_vulnerability('CRITICAL', f'SQL Injection Error Based Detected')
+                log_detail('Target', mutated.url)
+                log_detail('Method', mutated.method)
+                log_detail('Parameter', param)
+                log_detail('Payload', payload)
+                log_detail('Database', vulnerability)
                 
-                logger.log("VULN", f'Target: {mutated.url}')
-                logger.log("VULN", f'Method: {mutated.method}')
-                logger.log("VULN", f'Parameter: {param}')
-                logger.log("VULN", f'Payload: {payload}')
-                logger.log("VULN", f'Database: {vulnerability}')
-                
-                #logger.log("VULN", f'Possbile CVE: {vulnerability} {self.search_cve(vulnerability)['description']}')
                 print()
                 
                 return True
@@ -408,11 +406,11 @@ class SQLInjection(BaseAttack):
                     continue
 
                 if marker in resp.text:
-                    logger.critical(f"SQL Injection UNION based SQLi detected")
-                    logger.log("VULN", f'Target: {mutated.url}')
-                    logger.log("VULN", f'Method: {mutated.method}')
-                    logger.log("VULN", f'Parameter: {p}')
-                    logger.log("VULN", f"Payload: {payload}")
+                    log_vulnerability('CRITICAL', f"SQL Injection UNION based SQLi detected")
+                    log_detail('Target', mutated.url)
+                    log_detail('Method', mutated.method)
+                    log_detail('Parameter', param)
+                    log_detail('Payload', payload)
                     print()
                     return True
                     

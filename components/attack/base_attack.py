@@ -1,7 +1,7 @@
 
 import importlib
 import asyncio
-from components.main.logger import logger
+from components.main.console import log_error, log_info
 import json
 import re
 import copy
@@ -53,7 +53,7 @@ class BaseAttack:
             try:
                 mod = importlib.import_module(module_path)
             except ImportError as e:
-                logger.error(f"Failed to import module: {module_path} - {e}")
+                log_error(f"Failed to import module: {module_path} - {e}")
                 continue
 
             # look for the one BaseAttack subclass in that module
@@ -125,7 +125,7 @@ class BaseAttack:
         if BaseAttack._cves_data is None:
             cve_path = Path(__file__).parent / cve_file_path
             if not cve_path.exists():
-                logger.error(f"CVEs file not found: {cve_path}")
+                log_error(f"CVEs file not found: {cve_path}")
                 BaseAttack._cves_data = []
             else:
                 with open(cve_path, 'r', encoding='utf-8') as f:

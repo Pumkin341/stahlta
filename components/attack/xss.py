@@ -4,7 +4,7 @@ from pathlib import Path
 from fuzzywuzzy import fuzz
 from icecream import ic
 
-from components.main.logger import logger, update_status, status, console
+from components.main.console import status_update, log_vulnerability, log_detail, log_error
 from components.attack.base_attack import BaseAttack
 from components.web.request import Request
 
@@ -27,13 +27,11 @@ class XSS(BaseAttack):
         
         dom = self.check_dom(response.text)
         if dom:
-            status.stop()
-            logger.log('LOW', 'Potential DOM-based XSS found:')
-            logger.log('VULN', f'Target: {request.url}')
+            log_vulnerability('LOW', 'Potential DOM-based XSS found:')
+            log_detail('Target', request.url)
             for line in dom:
-                logger.log('VULN', line)
+                print(line)
             print()
-            status.start()
         
         for mutated, param in self.mutate_request(request, 's74l7a', mode = 'replace'):
             occurences = await self.detect_context(mutated)
@@ -42,7 +40,7 @@ class XSS(BaseAttack):
             if not occurences:
                 continue
            
-            #logger.debug(f'Reflections found in {param} for {mutated.url}: {len(occurences)}')
+            #log_debug(f'Reflections found in {param} for {mutated.url}: {len(occurences)}')
             
             efficiencies = await self.filter_checker(request, param, occurences)
             
@@ -74,8 +72,8 @@ class XSS(BaseAttack):
     async def test_xss(self, request: Request, param, payload, occurences, positions):
 
         efficiencies, mutated = await self.checker(request, param, payload, positions)
-        #logger.debug(f'testing {mutated}')
-        update_status(mutated.url)
+        #log_debug(f'testing {mutated}')
+        status_update(mutated.url)
 
         payload_context = self.classify_xss_payload(payload)
         
@@ -97,27 +95,24 @@ class XSS(BaseAttack):
             url = mutated.url.replace('st4r7s', '')
             url = url.replace('3nd', '')
             
-            console.log('asdasdasdasdasdadas')
-            logger.critical(f'Reflected XSS Vulnerability Found')
-            logger.log('VULN', f'Target: {url} {mutated.method}')
-            logger.log('VULN', f'Parameter: {param}')
-            logger.log('VULN', f'Payload: {payload}')
-            logger.log('VULN', f'Efficiency: {bestEfficiency}')
-            logger.log('VULN', '')
+            log_vulnerability('CRITICAL', f'Reflected XSS Vulnerability Found')
+            log_detail(f'Target', f'{url} {mutated.method}')
+            log_detail(f'Parameter', param)
+            log_detail(f'Payload', payload)
+            log_detail(f'Efficiency', bestEfficiency)
+            log_detail('')
             return True
         
         elif bestEfficiency >= 99:
             url = mutated.url.replace('st4r7s', '')
             url = url.replace('3nd', '')
             
-            status.stop()
-            logger.log('MEDIUM', f'Potential XSS Vulnerability Found')
-            logger.log('VULN', f'Target: {url} {mutated.method}')
-            logger.log('VULN', f'Parameter: {param}')
-            logger.log('VULN', f'Payload: {payload}')
-            logger.log('VULN', f'Efficiency: {bestEfficiency}')
-            logger.log('VULN', '')
-            status.start()
+            log_vulnerability('MEDIUM', f'Potential XSS Vulnerability Found')
+            log_detail(f'Target', f'{url} {mutated.method}')
+            log_detail(f'Parameter', param)
+            log_detail(f'Payload', payload)
+            log_detail(f'Efficiency', bestEfficiency)
+            log_detail('')
             return True
             
         
