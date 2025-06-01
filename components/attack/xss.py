@@ -4,6 +4,7 @@ from pathlib import Path
 from fuzzywuzzy import fuzz
 from icecream import ic
 
+import components.main.report as report
 from components.main.console import status_update, log_vulnerability, log_detail, log_error
 from components.attack.base_attack import BaseAttack
 from components.web.request import Request
@@ -101,6 +102,19 @@ class XSS(BaseAttack):
             log_detail(f'Payload', payload)
             log_detail(f'Efficiency', bestEfficiency)
             log_detail('')
+            
+            report.report_vulnerability(
+                'CRITICAL',
+                'XSS',
+                'XSS Reflected Vulnerability',
+                {
+                    'Target': mutated.url,
+                    'Method': mutated.method,
+                    'Parameter': param,
+                    'Payload': payload,
+                    'Efficiency': bestEfficiency
+                }
+            )
             return True
         
         elif bestEfficiency >= 99:
@@ -113,6 +127,19 @@ class XSS(BaseAttack):
             log_detail(f'Payload', payload)
             log_detail(f'Efficiency', bestEfficiency)
             log_detail('')
+            
+            report.report_vulnerability(
+                'MEDIUM',
+                'XSS',
+                'Potential XSS Vulnerability',
+                {
+                    'Target': mutated.url,
+                    'Method': mutated.method,
+                    'Parameter': param,
+                    'Payload': payload,
+                    'Efficiency': bestEfficiency
+                }
+            )
             return True
             
         

@@ -25,7 +25,7 @@ def parse_cli():
     parser.add_argument('--scope', '-s', dest = 'scope', default= 'domain', choices= ['domain', 'page', 'folder', 'subdomain', 'parameter'], help = 'Set the scope for the scan.')
     parser.add_argument('-t', '--timeout', dest = 'timeout', default= 10, help = 'Set the timeout for the request.')
     parser.add_argument('-d', '--depth', dest = 'depth', default= 30, type= int, help = 'Set the depth for the crawler.')
-    parser.add_argument('-o', '--output', dest = 'output', default= 'stahlta_report', help = 'Set the output file for the report.')
+    parser.add_argument('-o', '--output', dest = 'output', default= 'reports', help = 'Set the output file for the report.')
     parser.add_argument('-w', '--wordlist', dest = 'wordlist', help = 'Set the wordlist for the attack.')
     
     return parser.parse_args()

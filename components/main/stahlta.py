@@ -4,6 +4,8 @@ import signal
 from urllib.parse import urlparse
 
 from components.main.console import status_start, status_attack_start, status_stop, log_info, log_error, log_success
+import components.main.report as report
+
 from components.main.stal_controller import Stahlta
 from components.web.request import Request
 from components.web.login import log_in
@@ -105,6 +107,19 @@ async def stahlta_main():
     base_request = Request(url)
     stal = Stahlta(base_request, scope= args.scope)
         
+    if args.wordlist:
+        if validate_wordlist(args.wordlist):
+            stal.wordlist_path = args.wordlist
+        else:
+            sys.exit(1)
+            
+    if args.output:
+        output_path = report.validate_output_path(args.output)
+        if not output_path:
+            sys.exit(1)
+    else:
+        output_path = 'reports/'
+        
     if not await stal.test_connection():
         sys.exit(1)
         
@@ -113,11 +128,6 @@ async def stahlta_main():
         log_info(f'Headless mode: {args.headless.title()} \n')
         await stal.init_browser()
     
-    if args.wordlist:
-        if validate_wordlist(args.wordlist):
-            stal.wordlist_path = args.wordlist
-        else:
-            sys.exit(1)
             
             
     if args.login_url:
@@ -165,7 +175,24 @@ async def stahlta_main():
             loop.remove_signal_handler(signal.SIGINT)
         except NotImplementedError:
             pass
+        
+    report.generate_html_report(output_path, stal.count_resources())
        
+def stahltagui_main():
+    import sys
+    try:
+        from components.main.gui import StahltaGUI
+        
+    except ImportError as e:
+        sys.stderr.write(
+            "Error: could not import GUI (main/gui.py).\n"
+            "Make sure gui.py is present and that you run stahltagui from the project root.\n"
+            f"ImportError: {e}\n"
+        )
+        sys.exit(1)
+
+    app = StahltaGUI()
+    app.mainloop()
 
 def stahlta_asyncio_run():
     asyncio.run(stahlta_main())

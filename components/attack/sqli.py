@@ -6,14 +6,11 @@ from pathlib import Path
 import random
 import base64
 import json
-from http.cookiejar import CookieJar
-import copy
 from difflib import SequenceMatcher
 
-from components.main.console import log_error, log_debug, log_vulnerability, log_detail
+import components.main.report as report
+from components.main.console import log_error, log_debug, log_vulnerability, log_detail, status_update
 from components.attack.base_attack import BaseAttack
-from components.parsers.html import HTML
-from components.web.request import Request
 
 class SQLInjection(BaseAttack):
     name = 'sqli'
@@ -114,6 +111,9 @@ class SQLInjection(BaseAttack):
         await self.test_cookies(request, response)
         
         #print(f"Testing {request}")
+        status_update(request.url)
+        
+        
         start = time.time()
         vulnerable_parameters = await self.potentially_injectable(request)
         end = time.time() - start
@@ -193,6 +193,16 @@ class SQLInjection(BaseAttack):
                     log_vulnerability('HIGH', "SQL Injection via cookie detected")
                     log_detail("Target",  request.url)
                     log_detail("Cookie mutation", desc)
+                    
+                    report.report_vulnerability(
+                        severity='HIGH',
+                        category='SQL Injection',
+                        description="SQL Injection via cookie detected",
+                        details={
+                            "Target": request.url,
+                            "Cookie mutation": desc,
+                        }
+                    )
                     print()
                     return 
                 
@@ -201,6 +211,18 @@ class SQLInjection(BaseAttack):
                     log_detail("Target", request.url)
                     log_detail("Cookie mutation", desc)
                     log_detail(f"Status code changed from {response.status_code} to {resp.status_code}")
+                    
+                    report.report_vulnerability(
+                        severity='MEDIUM',
+                        category='SQL Injection',
+                        description="SQL Injection via cookie detected (status code change)",
+                        details={
+                            "Target": request.url,
+                            "Cookie mutation": desc,
+                            "Status code changed from": response.status_code,
+                            "To": resp.status_code
+                        }
+                    )
                     print()
                     return 
 
@@ -339,6 +361,19 @@ class SQLInjection(BaseAttack):
                 log_detail('Payload', payload)
                 log_detail('Database', vulnerability)
                 
+                report.report_vulnerability(
+                    severity='CRITICAL',
+                    category='SQL Injection',
+                    description='SQL Injection Error Based Detected',
+                    details={
+                        'Target': mutated.url,
+                        'Method': mutated.method,
+                        'Parameter': param,
+                        'Payload': payload,
+                        'Database': vulnerability
+                    }
+                )
+                
                 print()
                 
                 return True
@@ -412,6 +447,18 @@ class SQLInjection(BaseAttack):
                     log_detail('Parameter', param)
                     log_detail('Payload', payload)
                     print()
+                    
+                    report.report_vulnerability(
+                        severity='CRITICAL',
+                        category='SQL Injection',
+                        description='SQL Injection UNION based SQLi detected',
+                        details={
+                            'Target': mutated.url,
+                            'Method': mutated.method,
+                            'Parameter': param,
+                            'Payload': payload
+                        }
+                    )
                     return True
                     
 
