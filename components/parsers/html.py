@@ -44,12 +44,9 @@ def get_input_field_value(input_field) -> str:
     input_name = input_field["name"].lower()
     fallback = input_field.get("value", "")
 
-    # If there is a non-empty default value, use it
-    # If it is empty, it is OK if autofill is not set
     if fallback:
         return fallback
 
-    # Otherwise use our hardcoded values
     if input_type == "text":
         if "mail" in input_name:
             return AUTOFILL["email"]
@@ -61,10 +58,7 @@ def get_input_field_value(input_field) -> str:
     return AUTOFILL[input_type]
 
 class HTML:
-    def __init__(self, 
-                 content : str,
-                 url : str,
-                 allow_fragments : bool = True):
+    def __init__(self, content : str, url : str, allow_fragments : bool = True):
         
         self._content = content
         self._url = url
@@ -182,7 +176,6 @@ class HTML:
                         post_params.append([input_field["name"] + ".x", "1"])
                         post_params.append([input_field["name"] + ".y", "1"])
                 
-            # A formaction doesn't need a name
             for input_field in form.find_all("input", attrs={"formaction": True}):
                 form_actions.add(self._urljoin(input_field["formaction"].strip() or self._url))
             
@@ -196,12 +189,9 @@ class HTML:
                         post_params.append([input_name, input_value])
 
                 if "formaction" in button_field.attrs:
-                    # If formaction is empty it basically send to the current URL
-                    # which can be different from the defined action attribute on the form...
                     form_actions.add(self._urljoin(button_field["formaction"].strip() or self._url))
                     
             if form.find("input", attrs={"name": False, "type": "image"}):
-                # Unnamed input type file => names will be set as x and y
                 if method == "GET":
                     get_params.append(["x", "1"])
                     get_params.append(["y", "1"])
@@ -218,7 +208,6 @@ class HTML:
                         selected_value = option["value"]
 
                 if selected_value is None and all_values:
-                    # First value may be a placeholder but last entry should be valid
                     selected_value = all_values[-1]
 
                 if method == "GET":
@@ -241,7 +230,6 @@ class HTML:
             if method == "POST" and not post_params and not file_params:
                 continue
 
-            # First raise the form with the URL specified in the action attribute
             new_form = Request(
                 url,
                 method=method,
@@ -254,7 +242,6 @@ class HTML:
             )
             yield new_form
 
-            # Then if we saw some formaction attribute, raise the form with the given formaction URL
             for url in form_actions:
                 new_form = Request(
                     url,
@@ -335,7 +322,6 @@ class HTML:
                     get_params  = { inp["name"]: inp.get("value","") for inp in inputs }
                     post_params = {}
 
-                # return None for the password key to signal "step 1 only"
                 login_form = Request(
                     url,
                     method=method,
@@ -394,11 +380,9 @@ class HTML:
         return disconnect_urls
 
     def logged_in(self) -> bool:
-        # If we find logging errors on the page
         for regex in CONNECT_ERROR_REGEX:
             if self._soup.find(string=regex) is not None:
                 return False
-            # If we find a disconnect button on the page
         return self._soup.find(string=re.compile(DISCONNECT_REGEX)) is not None
 
     

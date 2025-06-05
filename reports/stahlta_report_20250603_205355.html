@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stahlta Scan Report</title>
+  <style>
+    /* Dark-themed body */
+    body {
+      background-color: #121212;
+      color: #e0e0e0;
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+    /* Centered container, increased width */
+    .container {
+      max-width: 1200px;
+      margin: 20px auto;
+      background-color: #1e1e1e;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    }
+    h1 {
+      text-align: center;
+      font-size: 2.5em;
+      margin-bottom: 10px;
+      color: #ffffff;
+    }
+    h2, h3 {
+      color: #e0e0e0;
+      margin-top: 30px;
+      margin-bottom: 10px;
+    }
+    .summary {
+      margin-bottom: 30px;
+    }
+    .summary p {
+      margin: 6px 0;
+      font-size: 1em;
+    }
+    ul {
+      padding-left: 20px;
+    }
+    /* Vulnerability list styling */
+    .vuln-list {
+      list-style: none;
+      padding: 0;
+    }
+    .vuln-item {
+      border: 1px solid #333;
+      border-left: 5px solid transparent;
+      border-radius: 4px;
+      padding: 16px;
+      margin-bottom: 20px;
+      background-color: #2a2a2a;
+      transition: background-color 0.2s;
+    }
+    .vuln-item:hover {
+      background-color: #333333;
+    }
+    .severity-label {
+      font-weight: bold;
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: #ffffff;
+      margin-right: 8px;
+    }
+    .sev-CRITICAL .severity-label { background-color: #b71c1c; }
+    .sev-HIGH .severity-label     { background-color: #d32f2f; }
+    .sev-MEDIUM .severity-label   { background-color: #f57c00; color: #000000; }
+    .sev-LOW .severity-label      { background-color: #388e3c; }
+    .vuln-item p {
+      margin: 8px 0;
+      font-size: 1em;
+    }
+    .vuln-details {
+      margin-top: 8px;
+      margin-left: 16px;
+      font-size: 0.95em;
+      color: #cfcfcf;
+    }
+    .no-vulns {
+      font-style: italic;
+      color: #757575;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Stahlta Scan Report</h1>
+    <div class="summary">
+      <p><strong>Generated on:</strong> 2025-06-03 20:54:00</p>
+      <p><strong>Total crawled resources:</strong> 33</p>
+      <p><strong>Total vulnerabilities found:</strong> 1</p>
+      <h3>By Severity:</h3>
+      <ul>
+        <li><span class="severity-label sev-LOW">LOW</span>: 1</li>
+      </ul>
+    </div>
+    <h2>Vulnerabilities Details</h2>
+    <h3>COOKIE FLAGS</h3>
+    <ul class="vuln-list">
+      <li class="vuln-item sev-LOW">
+        <p><span class="severity-label sev-LOW">LOW</span>Cookies secure flag is not set</p>
+        <p><strong>Timestamp:</strong> 2025-06-03 20:54:00</p>
+        <div class="vuln-details"><strong>Details:</strong><br><strong>Target:</strong> https://ginandjuice.shop/<br><strong>Cookie:</strong> AWSALB</div>
+      </li>
+    </ul>
+  </div>
+</body>
+</html>

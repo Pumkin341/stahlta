@@ -42,7 +42,10 @@ def log_detail(msg1, msg2 = None):
     if msg1 in '' and msg2 is None:
         console.print()
         return
-    console.print(f'{msg1:<10} : {msg2}')  
+    if msg2 is None:
+        console.print(f'{msg1}')
+    else:
+        console.print(f'{msg1:<10} : {msg2}')  
 
 
 def status_start():

@@ -42,7 +42,7 @@ class SQLInjection(BaseAttack):
             
         self.error_regexes = self._load_error_regexes()
         
-        self.semaphore = asyncio.Semaphore(50)
+        self.semaphore = asyncio.Semaphore(20)
         self.tested_cookies = set()
         
     def _load_payload_files(self):
@@ -113,11 +113,7 @@ class SQLInjection(BaseAttack):
         #print(f"Testing {request}")
         status_update(request.url)
         
-        
-        start = time.time()
         vulnerable_parameters = await self.potentially_injectable(request)
-        end = time.time() - start
-        #print(f'time taken: {end:.2f}s')
         
         if not vulnerable_parameters:
             return
@@ -149,20 +145,26 @@ class SQLInjection(BaseAttack):
        
         cookies = self.crawler.cookies.jar
         
+        if not cookies or request.url in self.tested_cookies:
+            return
+        self.tested_cookies.add(request.url)
+        
+        
         for cookie in cookies:
             trials = []
             name = cookie.name
             val = cookie.value
-            if name in self.tested_cookies:
-                continue
-            self.tested_cookies.add(name)
+            
+            decoded_data = None
 
-            for payload in self.SPECIAL_CHARS:
-                trials.append((val + payload, f"{name} raw + {payload!r}"))
+            # for payload in self.SPECIAL_CHARS:
+            #     trials.append((val + payload, f"{name} raw + {payload!r}"))
 
             try:
                 decoded = base64.b64decode(val).decode("utf-8")
                 data = json.loads(decoded)
+                decoded_data = data.copy()
+                
                 for field, fld_val in data.items():
                     if isinstance(fld_val, str):
                         for payload in self.SPECIAL_CHARS:
@@ -173,26 +175,29 @@ class SQLInjection(BaseAttack):
                             ).decode()
                             desc = f"{name} : {field}  + {payload}"
                             trials.append((new_b64, desc))
+                       
             except Exception:
                 pass
 
-        
+            orig_headers = dict(self.crawler.headers)
             for new_val, desc in trials:
-                hdrs = self.crawler.headers  
-                hdrs['Cookie'] = "; ".join(
+                temp_headers = dict(orig_headers)         # make a fresh copy  
+                temp_headers['Cookie'] = "; ".join(
                     f"{cookie.name}={new_val if cookie.name == name else cookie.value}"
                     for cookie in cookies
                 )
 
                 try:
-                    resp = await self.crawler.send(request, timeout=1, headers =hdrs)
+                    resp = await self.crawler.send(request, timeout=1, headers=temp_headers)
                 except Exception:
                     continue
+                
                 
                 if self._find_error(resp.text):
                     log_vulnerability('HIGH', "SQL Injection via cookie detected")
                     log_detail("Target",  request.url)
                     log_detail("Cookie mutation", desc)
+                    log_detail('Decoded cookie', decoded_data )
                     
                     report.report_vulnerability(
                         severity='HIGH',
@@ -210,7 +215,9 @@ class SQLInjection(BaseAttack):
                     log_vulnerability('MEDIUM', "SQL Injection via cookie detected (status code change)")
                     log_detail("Target", request.url)
                     log_detail("Cookie mutation", desc)
-                    log_detail(f"Status code changed from {response.status_code} to {resp.status_code}")
+                    log_detail("Decoded cookie", decoded_data)
+                    log_detail("Status code changed from", f"{response.status_code}")
+                    log_detail("To", resp.status_code)
                     
                     report.report_vulnerability(
                         severity='MEDIUM',
@@ -311,8 +318,6 @@ class SQLInjection(BaseAttack):
                     break
 
         return vulnerable_parameters
-
-    
     
     def _find_error(self, text):
         text_small = text
@@ -439,7 +444,6 @@ class SQLInjection(BaseAttack):
                     continue
                 if resp.status_code >= 500:
                     continue
-
                 if marker in resp.text:
                     log_vulnerability('CRITICAL', f"SQL Injection UNION based SQLi detected")
                     log_detail('Target', mutated.url)

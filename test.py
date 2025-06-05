@@ -87,10 +87,43 @@
 # response = client.get("http://192.168.224.1/DVWA/login.php")
 # print(response.text)
 
-from rich.console import Console
-console = Console()
+import asyncio
+from playwright.async_api import async_playwright
 
-console.print([1, 2, 3])
-console.print("[bold black on red]Looks like a link")
-console.print(locals())
-console.print("FOO", style="white on blue")
+async def click_and_capture_xml(product_id: int, store_id: int):
+    """
+    - Goes to the product‐detail page for `product_id`
+    - Chooses `store_id` from the <select>
+    - Clicks “Check stock”
+    - Waits for the POST to /catalog/product/stock
+    - Returns the raw XML string that was sent
+    """
+    async with async_playwright() as pw:
+        browser = await pw.chromium.launch(headless=True)
+        page = await browser.new_page()
+
+        # 1) Navigate to the product page (which loads xmlStockCheckPayload.js + stockCheck.js)
+        url = f"https://ginandjuice.shop/catalog/product?productId={product_id}"
+        await page.goto(url)
+
+        # 2) Wait for the <select name="storeId"> to be ready, then choose our store
+        await page.wait_for_selector("select[name=storeId]")
+        await page.select_option("select[name=storeId]", str(store_id))
+
+        async with page.expect_request("https://ginandjuice.shop/catalog/product/stock") as first:
+            # 4) Click the “Check stock” button inside #stockCheckForm:
+            await page.click("#stockCheckForm button[type=submit]")
+            
+        first_request = await first.value  
+        return first_request
+        
+
+        
+        
+# Example usage:
+if __name__ == "__main__":
+    pid = 1
+    sid = 3
+    xml_request = asyncio.run(click_and_capture_xml(pid, sid))
+    print("Captured XML payload:")
+    print(xml_request.post_data)

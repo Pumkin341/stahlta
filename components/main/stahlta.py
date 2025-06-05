@@ -1,7 +1,10 @@
 import asyncio
 import sys
 import signal
+import json
+import re
 from urllib.parse import urlparse
+from http.cookiejar import CookieJar, Cookie
 
 from components.main.console import status_start, status_attack_start, status_stop, log_info, log_error, log_success
 import components.main.report as report
@@ -64,6 +67,58 @@ def validate_wordlist(wordlist: str):
     
     return True
 
+
+def parse_headers_or_cookies(data_str: str, is_cookie: bool = False) -> dict:
+    VALID_KV_PATTERN = re.compile(r"^[^;:=\s][^;\n\r\t:=]*[:=][^;:=\s][^;\n\r\t:=]*$")
+    label = "cookie" if is_cookie else "header"
+ 
+    try:
+        parsed = json.loads(data_str)
+        if not isinstance(parsed, dict):
+            log_error(f"{label.capitalize()} input JSON must be a dictionary.")
+            sys.exit(1)
+            
+        for k, v in parsed.items():
+            if not isinstance(k, str) or not isinstance(v, str):
+                log_error(f"All {label} keys and values must be strings.")
+                sys.exit(1)
+                
+        return parsed
+    
+    except json.JSONDecodeError:
+        pass  
+
+    result = {}
+    for entry in data_str.split(';'):
+        entry = entry.strip()
+        if not entry:
+            continue
+        if not VALID_KV_PATTERN.match(entry):
+            log_error(f"Invalid {label} entry: '{entry}'")
+            sys.exit(1)
+            
+        if ':' in entry:
+            k, v = entry.split(':', 1)
+        else:
+            k, v = entry.split('=', 1)
+        result[k.strip()] = v.strip()
+    return result
+    
+def dict_to_cookiejar(d):
+    jar = CookieJar()
+    for k, v in d.items():
+        jar.set_cookie(Cookie(
+            version=0, name=k, value=v,
+            port=None, port_specified=False,
+            domain="", domain_specified=False,
+            domain_initial_dot=False,
+            path="/", path_specified=True,
+            secure=False, expires=None,
+            discard=True, comment=None,
+            comment_url=None, rest={}, rfc2109=False
+        ))
+    return jar
+
 def printBanner():
     
     banner = r'''
@@ -92,7 +147,6 @@ async def stahlta_main():
         url = add_slash_to_path(args.url)
     else:
         url = args.url
-    url = args.url
         
     if not validate_url_endpoint(url):
         sys.exit(1)
@@ -120,6 +174,12 @@ async def stahlta_main():
     else:
         output_path = 'reports/'
         
+    if args.headers:
+        headers = parse_headers_or_cookies(args.headers)
+        stal.crawler_config.headers = headers
+    else:
+        headers = {}
+        
     if not await stal.test_connection():
         sys.exit(1)
         
@@ -128,9 +188,12 @@ async def stahlta_main():
         log_info(f'Headless mode: {args.headless.title()} \n')
         await stal.init_browser()
     
+    if args.cookies:
+        cookies_dict = parse_headers_or_cookies(args.cookies)
+        cookies_input = dict_to_cookiejar(cookies_dict)   
+        stal.crawler_config.cookies = cookies_input
             
-            
-    if args.login_url:
+    elif args.login_url:
         if not args.username or not args.password:
             log_error('Please provide --username and --password for the authentication.')
             sys.exit(1)
@@ -177,6 +240,7 @@ async def stahlta_main():
             pass
         
     report.generate_html_report(output_path, stal.count_resources())
+    log_success(f'Report generated at {output_path}. \n')
        
 def stahltagui_main():
     import sys

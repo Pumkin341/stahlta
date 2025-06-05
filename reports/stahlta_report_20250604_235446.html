@@ -91,36 +91,21 @@
   <div class="container">
     <h1>Stahlta Scan Report</h1>
     <div class="summary">
-      <p><strong>Generated on:</strong> 2025-06-01 23:57:02</p>
-      <p><strong>Total crawled resources:</strong> 100</p>
-      <p><strong>Total vulnerabilities found:</strong> 3</p>
+      <p><strong>Generated on:</strong> 2025-06-04 23:54:48</p>
+      <p><strong>Total crawled resources:</strong> 54</p>
+      <p><strong>Total vulnerabilities found:</strong> 1</p>
       <h3>By Severity:</h3>
       <ul>
-        <li><span class="severity-label sev-CRITICAL">CRITICAL</span>: 1</li>
-        <li><span class="severity-label sev-HIGH">HIGH</span>: 1</li>
         <li><span class="severity-label sev-LOW">LOW</span>: 1</li>
       </ul>
     </div>
     <h2>Vulnerabilities Details</h2>
-    <h3>SQL INJECTION</h3>
-    <ul class="vuln-list">
-      <li class="vuln-item sev-HIGH">
-        <p><span class="severity-label sev-HIGH">HIGH</span>Potential SQL injection in login form</p>
-        <p><strong>Timestamp:</strong> 2025-06-01 23:57:02</p>
-        <div class="vuln-details"><strong>Details:</strong><br><strong>Target:</strong> http://example.com/login<br><strong>Parameter:</strong> username<br><strong>Payload:</strong> &#x27; OR 1=1 --</div>
-      </li>
-      <li class="vuln-item sev-LOW">
-        <p><span class="severity-label sev-LOW">LOW</span>Blind SQL injection in user profile</p>
-        <p><strong>Timestamp:</strong> 2025-06-01 23:57:02</p>
-        <div class="vuln-details"><strong>Details:</strong><br><strong>Target:</strong> http://example.com/profile<br><strong>Parameter:</strong> id<br><strong>Payload:</strong> 1&#x27; AND 1=1 --</div>
-      </li>
-    </ul>
     <h3>XSS</h3>
     <ul class="vuln-list">
-      <li class="vuln-item sev-CRITICAL">
-        <p><span class="severity-label sev-CRITICAL">CRITICAL</span>Reflected XSS in search page</p>
-        <p><strong>Timestamp:</strong> 2025-06-01 23:57:02</p>
-        <div class="vuln-details"><strong>Details:</strong><br><strong>Target:</strong> http://example.com/search<br><strong>Parameter:</strong> query<br><strong>Payload:</strong> &lt;script&gt;alert(1)&lt;/script&gt;</div>
+      <li class="vuln-item sev-LOW">
+        <p><span class="severity-label sev-LOW">LOW</span>Potential DOM-based XSS found</p>
+        <p><strong>Timestamp:</strong> 2025-06-04 23:54:48</p>
+        <div class="vuln-details"><strong>Details:</strong><br><strong>Target:</strong> https://pentest-ground.com:4280/vulnerabilities/xss_d/<br><strong>Details:</strong> [&#x27;-   \t\t\t\t\tif (document.\x1b[93mlocation.href\x1b[0m.indexOf(&quot;default=&quot;) &gt;= 0) {\r&#x27;, &#x27;-   \t\t\t\t\t\tvar \x1b[93mlang\x1b[0m = document.\x1b[93m\x1b[93mlocation.href\x1b[0m\x1b[0m.substring(document.\x1b[93m\x1b[93mlocation.href\x1b[0m\x1b[0m.indexOf(&quot;default=&quot;)+8);\r&#x27;, &#x27;-   \t\t\t\t\t\t\x1b[91mdocument.write\x1b[0m(&quot;&lt;option value=\&#x27;&quot; + \x1b[93mlang\x1b[0m + &quot;\&#x27;&gt;&quot; + decodeURI(\x1b[93mlang\x1b[0m) + &quot;&lt;/option&gt;&quot;);\r&#x27;, &#x27;-   \t\t\t\t\t\t\x1b[91mdocument.write\x1b[0m(&quot;&lt;option value=\&#x27;\&#x27; disabled=\&#x27;disabled\&#x27;&gt;----&lt;/option&gt;&quot;);\r&#x27;, &#x27;-   \t\t\t\t\t\x1b[91mdocument.write\x1b[0m(&quot;&lt;option value=\&#x27;English\&#x27;&gt;English&lt;/option&gt;&quot;);\r&#x27;, &#x27;-   \t\t\t\t\t\x1b[91mdocument.write\x1b[0m(&quot;&lt;option value=\&#x27;French\&#x27;&gt;French&lt;/option&gt;&quot;);\r&#x27;, &#x27;-   \t\t\t\t\t\x1b[91mdocument.write\x1b[0m(&quot;&lt;option value=\&#x27;Spanish\&#x27;&gt;Spanish&lt;/option&gt;&quot;);\r&#x27;, &#x27;-   \t\t\t\t\t\x1b[91mdocument.write\x1b[0m(&quot;&lt;option value=\&#x27;German\&#x27;&gt;German&lt;/option&gt;&quot;);\r&#x27;]</div>
       </li>
     </ul>
   </div>

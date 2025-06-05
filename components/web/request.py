@@ -68,7 +68,21 @@ class Request():
         
         post_params are the same as get_params.
         '''
-            
+        
+        if not parts.query and get_params:
+            if isinstance(get_params, dict):
+                query_string = '&'.join(f"{k}={v}" for k, v in get_params.items())
+            elif isinstance(get_params, list):
+                query_string = '&'.join(f"{k}={v}" for k, v in get_params)
+            elif isinstance(get_params, str):
+                query_string = get_params
+            else:
+                raise ValueError('Invalid get_params type')
+
+            new_parts = list(parts)
+            new_parts[4] = query_string
+            self._url = urlunparse(new_parts)
+                    
         if parts.query and not get_params:
             raw = parse_qs(parts.query)
             self._get_params = {k: v[0] for k, v in raw.items()}
@@ -217,6 +231,7 @@ class Request():
     @size.setter
     def size(self, size):
         self._size = size
+        
     @property
     def enctype(self):
         return self._enctype

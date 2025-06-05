@@ -22,7 +22,10 @@ def parse_cli():
     
     parser.add_argument('-a', '--attack',dest='attack', help='The attacks to be used (space separated)', nargs='+', choices=modules_all, default=modules_all)
     parser.add_argument('--headless', dest = 'headless', help = 'Run the scanner in headless mode.', default= 'no', choices= ['yes', 'no'])
-    parser.add_argument('--scope', '-s', dest = 'scope', default= 'domain', choices= ['domain', 'page', 'folder', 'subdomain', 'parameter'], help = 'Set the scope for the scan.')
+    parser.add_argument('-s', '--scope', dest = 'scope', default= 'domain', choices= ['domain', 'page', 'folder', 'subdomain', 'parameter'], help = 'Set the scope for the scan.')
+    parser.add_argument('--headers', dest='headers', help='Custom headers as JSON or key:value;key:value format.')
+    parser.add_argument('--cookies', dest='cookies', help='Custom cookies as JSON or key=value;key=value format.')
+    
     parser.add_argument('-t', '--timeout', dest = 'timeout', default= 10, help = 'Set the timeout for the request.')
     parser.add_argument('-d', '--depth', dest = 'depth', default= 30, type= int, help = 'Set the depth for the crawler.')
     parser.add_argument('-o', '--output', dest = 'output', default= 'reports', help = 'Set the output file for the report.')

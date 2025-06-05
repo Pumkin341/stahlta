@@ -87,16 +87,8 @@ class Crawler:
         except Exception as e:
             log_error(f"SSL context error: {e}")
             ssl_ctx = None
-            
-        authentification = None
-        if config.http_auth:
-            if config.http_auth.method == 'basic':
-                authentification = httpx.BasicAuth(config.http_auth.username, config.http_auth.password)
-            elif config.http_auth.method == 'digest':
-                authentification = httpx.DigestAuth(config.http_auth.username, config.http_auth.password)
   
         client = httpx.AsyncClient(
-            auth= authentification,
             headers = headers,
             timeout = config.timeout,
             cookies = config.cookies,
@@ -128,7 +120,7 @@ class Crawler:
                     
                 pr = await page.goto(
                     base_request.url,
-                    wait_until='domcontentloaded',
+                    wait_until='networkidle',
                     timeout=timeoutt * 1000
                 )
                 content = await page.content()
@@ -197,7 +189,7 @@ class Crawler:
         else:
             timeout = httpx.Timeout(timeout)
             
-        post_request = self._client.build_request(method, base_request.url, params = base_request.get_params, data = base_request.post_params, headers=headers, timeout = timeout)
+        post_request = self._client.build_request(method, base_request.url, data = base_request.post_params, headers=headers, timeout = timeout)
         
         try:
             response = await self._client.send(post_request, follow_redirects = redirect)

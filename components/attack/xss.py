@@ -23,16 +23,32 @@ class XSS(BaseAttack):
             )
 
     async def run(self, request: Request, response):
+        
+        # print(request)
+        # print(response.text)
+        # print()
         if not request.get_params and not request.post_params:
             return
         
         dom = self.check_dom(response.text)
         if dom:
-            log_vulnerability('LOW', 'Potential DOM-based XSS found:')
+            log_vulnerability('LOW', 'Potential Reflected DOM-based XSS found:')
             log_detail('Target', request.url)
             for line in dom:
-                print(line)
+                log_detail(line)
             print()
+            
+            report.report_vulnerability(
+                'LOW',
+                'XSS',
+                'Potential DOM-based XSS found',
+                {
+                    'Target': request.url,
+                    'Details': dom
+                }
+            )
+            
+        
         
         for mutated, param in self.mutate_request(request, 's74l7a', mode = 'replace'):
             occurences = await self.detect_context(mutated)
@@ -271,134 +287,176 @@ class XSS(BaseAttack):
 
         return 'html'
 
-    async def filter_checker(self, request, param, occurences):
-        positions = occurences.keys()
-        sortedEfficiencies = {}
-        payloads = set(['<', '>'])
+    async def filter_checker(self, request, param, occurrences):
+        positions = occurrences.keys()
+        sorted_efficiencies = {}
+        payloads = {'<', '>'}
+
         for i in range(len(positions)):
-            sortedEfficiencies[i] = {}
-        for i in occurences:
-            occurences[i]['score'] = {}
-            context = occurences[i]['context']
+            sorted_efficiencies[i] = {}
+
+        for i in occurrences:
+            occurrences[i]['score'] = {}
+            context = occurrences[i]['context']
+
             if context == 'comment':
                 payloads.add('-->')
             elif context == 'script':
-                payloads.add(occurences[i]['details']['quote'])
+                payloads.add(occurrences[i]['details']['quote'])
                 payloads.add('</scRipT/>')
             elif context == 'attribute':
-                if occurences[i]['details']['type'] == 'value':
-                    if occurences[i]['details']['name'] == 'srcdoc': 
-                        payloads.add('&lt;')  
-                        payloads.add('&gt;')
-                if occurences[i]['details']['quote']:
-                    payloads.add(occurences[i]['details']['quote'])
-                    
+                details = occurrences[i]['details']
+                if details['type'] == 'value' and details['name'] == 'srcdoc':
+                    payloads.add('&lt;')
+                    payloads.add('&gt;')
+                if details.get('quote'):
+                    payloads.add(details['quote'])
+
         for payload in payloads:
-            if payload:
-                efficiencies, _ = await self.checker(request, param, payload, positions)
-                efficiencies.extend([0] * (len(occurences) - len(efficiencies)))
-                for occurence, efficiency in zip(occurences, efficiencies):
-                    occurences[occurence]['score'][payload] = efficiency
-        return occurences
+            if not payload:
+                continue
+
+            efficiencies, _ = await self.checker(request, param, payload, positions)
+            efficiencies.extend([0] * (len(occurrences) - len(efficiencies)))
+
+            for occurrence, efficiency in zip(occurrences, efficiencies):
+                occurrences[occurrence]['score'][payload] = efficiency
+
+        return occurrences
+
 
     async def checker(self, request: Request, param, payload, positions):
-        checkString = 'st4r7s' + payload + '3nd'
-        
-        for mutated, param in self.mutate_request(request, checkString, mode= 'replace', parameter= param):
+        check_string = 'st4r7s' + payload + '3nd'
+
+        for mutated, param in self.mutate_request(
+            request, check_string, mode='replace', parameter=param
+        ):
             async with self.semaphore:
-                response = await self.crawler.send(mutated, timeout = 1.5)
-        response = response.text
-        
-        reflectedPositions = []
-        for match in re.finditer('st4r7s', response):
-            reflectedPositions.append(match.start())
-        filledPositions = self.fillHoles(positions, reflectedPositions)
-        #  Itretating over the reflections
-        num = 0
+                response = await self.crawler.send(mutated, timeout=1.5)
+
+        response_text = response.text
+
+        reflected_positions = [
+            match.start() for match in re.finditer('st4r7s', response_text)
+        ]
+        filled_positions = self.fill_holes(positions, reflected_positions)
+
         efficiencies = []
-        for position in filledPositions:
-            allEfficiencies = []
+        num = 0
+
+        for position in filled_positions:
+            all_efficiencies = []
+
             try:
-                reflected = response[reflectedPositions[num]
-                    :reflectedPositions[num]+len(checkString)]
-                efficiency = fuzz.partial_ratio(reflected, checkString.lower())
-                allEfficiencies.append(efficiency)
-            except IndexError:
+                start_idx = reflected_positions[num]
+                reflected = response_text[start_idx: start_idx + len(check_string)]
+                efficiency = fuzz.partial_ratio(reflected, check_string.lower())
+                all_efficiencies.append(efficiency)
+            except (IndexError, UnboundLocalError):
                 pass
+
             if position:
-                reflected = response[position:position+len(checkString)]
-                efficiency = fuzz.partial_ratio(reflected, checkString)
-                if reflected[:-2] == ('\\%s' % checkString.replace('st4r7s', '').replace('3nd', '')):
+                reflected = response_text[position: position + len(check_string)]
+                efficiency = fuzz.partial_ratio(reflected, check_string)
+                # Special case for escaped injections
+                if reflected[:-2] == f"\\%s" % check_string.replace('st4r7s', '').replace('3nd', ''):
                     efficiency = 90
-                allEfficiencies.append(efficiency)
-                efficiencies.append(max(allEfficiencies))
+                all_efficiencies.append(efficiency)
+
+                efficiencies.append(max(all_efficiencies))
             else:
                 efficiencies.append(0)
+
             num += 1
+
         return list(filter(None, efficiencies)), mutated
-    
-    def fillHoles(self, original, new):
+
+
+    def fill_holes(self, original, new):
         filler = 0
         filled = []
+
         for x, y in zip(original, new):
-            if int(x) == (y + filler):
+            if int(x) == y + filler:
                 filled.append(y)
             else:
                 filled.extend([0, y])
                 filler += (int(x) - y)
+
         return filled
-            
-    def check_dom(self, response):
-        red = '\033[91m'
-        yellow = '\033[93m'
-        end = '\033[0m'
+
+
+    def check_dom(self, text):
+        RED = '\033[91m'
+        YELLOW = '\033[93m'
+        END = '\033[0m'
         highlighted = []
-        sources = r'''\b(?:document\.(URL|documentURI|URLUnencoded|baseURI|cookie|referrer)|location\.(href|search|hash|pathname)|window\.name|history\.(pushState|replaceState)(local|session)Storage)\b'''
-        sinks = r'''\b(?:eval|evaluate|execCommand|assign|navigate|getResponseHeaderopen|showModalDialog|Function|set(Timeout|Interval|Immediate)|execScript|crypto.generateCRMFRequest|ScriptElement\.(src|text|textContent|innerText)|.*?\.onEventName|document\.(write|writeln)|.*?\.innerHTML|Range\.createContextualFragment|(document|window)\.location)\b'''
-        scripts = re.findall(r'(?i)(?s)<script[^>]*>(.*?)</script>', response)
-        sinkFound, sourceFound = False, False
+
+        sources_pattern = (
+            r'''\b(?:document\.(URL|documentURI|URLUnencoded|baseURI|cookie|referrer)'''
+            r'''|location\.(href|search|hash|pathname)|window\.name'''
+            r'''|history\.(pushState|replaceState)(local|session)Storage)\b'''
+        )
+        sinks_pattern = (
+            r'''\b(?:eval|evaluate|execCommand|assign|navigate|getResponseHeaderopen'''
+            r'''|showModalDialog|Function|set(Timeout|Interval|Immediate)|execScript'''
+            r'''|crypto.generateCRMFRequest|ScriptElement\.(src|text|textContent'''
+            r'''|innerText)|.*?\.onEventName|document\.(write|writeln)|.*?\.innerHTML'''
+            r'''|Range\.createContextualFragment|(document|window)\.location)\b'''
+        )
+
+        scripts = re.findall(r'(?i)(?s)<script[^>]*>(.*?)</script>', text)
+        sink_found = False
+        source_found = False
+
         for script in scripts:
-            script = script.split('\n')
-            allControlledVariables = set()
+            lines = script.split('\n')
+            all_controlled_vars = set()
+
             try:
-                for newLine in script:
-                    line = newLine
-                    parts = line.split('var ')
-                    controlledVariables = set()
+                for original_line in lines:
+                    parts = original_line.split('var ')
+                    controlled_vars = set()
+                    line = original_line
+
                     if len(parts) > 1:
                         for part in parts:
-                            for controlledVariable in allControlledVariables:
-                                if controlledVariable in part:
-                                    controlledVariables.add(re.search(r'[a-zA-Z$_][a-zA-Z0-9$_]+', part).group().replace('$', '\\$'))
-                    pattern = re.finditer(sources, newLine)
-                    for grp in pattern:
-                        if grp:
-                            source = newLine[grp.start():grp.end()].replace(' ', '')
-                            if source:
-                                if len(parts) > 1:
-                                    for part in parts:
-                                        if source in part:
-                                            controlledVariables.add(re.search(r'[a-zA-Z$_][a-zA-Z0-9$_]+', part).group().replace('$', '\\$'))
-                                line = line.replace(source, yellow + source + end)
-                    for controlledVariable in controlledVariables:
-                        allControlledVariables.add(controlledVariable)
-                    for controlledVariable in allControlledVariables:
-                        matches = list(filter(None, re.findall(r'\b%s\b' % controlledVariable, line)))
-                        if matches:
-                            sourceFound = True
-                            line = re.sub(r'\b%s\b' % controlledVariable, yellow + controlledVariable + end, line)
-                    pattern = re.finditer(sinks, newLine)
-                    for grp in pattern:
-                        if grp:
-                            sink = newLine[grp.start():grp.end()].replace(' ', '')
-                            if sink:
-                                line = line.replace(sink, red + sink + end)
-                                sinkFound = True
-                    if line != newLine:
-                        highlighted.append('%-3s %s' % ('-', line.lstrip(' ')))
+                            for var in all_controlled_vars:
+                                if var in part:
+                                    match = re.search(r'[a-zA-Z$_][a-zA-Z0-9$_]+', part)
+                                    if match:
+                                        controlled_vars.add(match.group().replace('$', r'\$'))
+
+                    for grp in re.finditer(sources_pattern, original_line):
+                        source = original_line[grp.start(): grp.end()].replace(' ', '')
+                        if source:
+                            if len(parts) > 1:
+                                for part in parts:
+                                    if source in part:
+                                        match = re.search(r'[a-zA-Z$_][a-zA-Z0-9$_]+', part)
+                                        if match:
+                                            controlled_vars.add(match.group().replace('$', r'\$'))
+                            line = line.replace(source, f"{YELLOW}{source}{END}")
+
+                    all_controlled_vars.update(controlled_vars)
+
+                    for var in all_controlled_vars:
+                        if re.search(rf'\b{var}\b', line):
+                            source_found = True
+                            line = re.sub(rf'\b{var}\b', f"{YELLOW}{var}{END}", line)
+
+                    for grp in re.finditer(sinks_pattern, original_line):
+                        sink = original_line[grp.start(): grp.end()].replace(' ', '')
+                        if sink:
+                            line = line.replace(sink, f"{RED}{sink}{END}")
+                            sink_found = True
+
+                    if line != original_line:
+                        highlighted.append(f"{line.lstrip(' ')}")
+
             except MemoryError:
-                pass
-        if sinkFound or sourceFound:
+                continue
+
+        if sink_found or source_found:
             return highlighted
-        else:
-            return []
+        return []

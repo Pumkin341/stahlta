@@ -11,7 +11,7 @@ from components.web.login import build_cookiejar_from_context
 from components.parsers.html import HTML
 from components.parsers.dynamic import js_redirections, dynamic_links
 
-from components.main.console import status_update, log_error
+from components.main.console import status_update, log_error, log_debug
 
 from components.web import EXCLUDED_EXTENSIONS
 
@@ -37,9 +37,7 @@ class Explorer:
         
         javascript_links = []
         allowed_links = []
-        
         new_requests = []
-
         
         if response.is_redirect:
             if 'location' in response.headers:
@@ -66,6 +64,7 @@ class Explorer:
                 allowed_links.append(extra_url)
                 
             for form in html.forms_iterator():
+                #print(form)
                 if self._scope.check(form):
    
                     if form.hostname not in self._hostnames:
@@ -102,7 +101,6 @@ class Explorer:
             new_requests.append(Request(new_url, depth=depth))
 
         return new_requests
-
     
     async def _async_analyze(self, request : Request):
         
@@ -111,6 +109,7 @@ class Explorer:
             self._hostnames.add(request.hostname)
             
             status_update(request.url)
+            log_debug(request)
 
             try:
                 response = await self._crawler.send(request)
