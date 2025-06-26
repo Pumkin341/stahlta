@@ -17,7 +17,7 @@ class CookieFlags(BaseAttack):
         cookies = self.crawler.cookies.jar
         
         for cookie in cookies:
-            if cookie in self.tested_cookies:
+            if cookie.name in self.tested_cookies:
                 continue
             
             if not cookie.secure:
@@ -51,6 +51,21 @@ class CookieFlags(BaseAttack):
                         'Cookie': cookie.name
                     }
                 )
-        
-            self.tested_cookies.add(cookie)
+
+            if not (cookie.has_nonstandard_attr("samesite") or cookie.has_nonstandard_attr("SameSite")):
+                log_vulnerability('LOW', f'Cookies SameSite flag is not set')
+                log_detail('Target', request.url)
+                log_detail('Cookie', cookie.name)
+                print()
+
+                report.report_vulnerability(
+                    severity='LOW',
+                    category='Cookie Flags',
+                    description='Cookies SameSite flag is not set',
+                    details={
+                        'Target': request.url,
+                        'Cookie': cookie.name
+                    }
+                )
+            self.tested_cookies.add(cookie.name)
                 

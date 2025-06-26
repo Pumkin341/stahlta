@@ -10,7 +10,7 @@ from urllib.parse import urlparse, urlunparse, urlencode, parse_qsl
 
 from components.web.request import Request
 
-modules_all = ['all', 'sqli', 'xss', 'csrf', 'ssrf', 'cookie_flags',  'headers']
+modules_all = ['all', 'sqli', 'xss', 'csrf', 'cookie_flags',  'headers', 'cmd']
 cve_file_path = './cves/web_cves_all.json'
 
 class BaseAttack:

@@ -17,8 +17,14 @@ from components.parsers.cli import parse_cli
 
 stop_event = asyncio.Event()
 
-def add_slash_to_path(url : str):
-    return url if urlparse(url).path.endswith('/') else url + '/'
+def add_slash_to_path(url: str):
+    parts = urlparse(url)
+    path = parts.path
+    if path == '' or path == '/':
+        return url if url.endswith('/') else url + '/'
+    if path.endswith(('.php', '.html', '.asp', '.aspx', '.jsp', '.cgi')):
+        return url
+    return url if path.endswith('/') else url + '/'
 
 def ctrl_c():
     print('\n')
@@ -239,7 +245,12 @@ async def stahlta_main():
         except NotImplementedError:
             pass
         
-    report.generate_html_report(output_path, stal.count_resources())
+    scan_info = {
+        "Target": url,
+        "Headless": args.headless,
+        "Resources Scanned": stal.count_resources()
+    }
+    report.generate_html_report(output_path, scan_info)
     log_success(f'Report generated at {output_path}. \n')
        
 def stahltagui_main():

@@ -10,7 +10,7 @@ from urllib.error import URLError
 from collections import deque
 from playwright.async_api import async_playwright
 
-from components.main.console import console, status_update_attack, log_error, log_info, log_warning, log_attack, log_success
+from components.main.console import console, status_update_attack, log_error, log_info, log_warning, log_attack, log_success, log_failure
 from components.web.request import Request
 from components.web.crawler import CrawlerConfig, Crawler, HTTP_Auth
 from components.web.explorer import Explorer
@@ -97,10 +97,17 @@ class Stahlta:
                 response = await crawler.send(self._base_request, timeout=self._timeout)
                 
             except Exception as e:
-                log_error(f"Cannot connect to the URL {self._base_request.url}: {e}")
+                log_error(f"Cannot connect to the URL {self._base_request.url} : {e}")
                 return False
+        
+        if response.status_code >= 200 and response.status_code < 300:
+            log_success(f"Connected to {self._base_request.url} | Status code: {response.status_code}")
+            return True
             
-        log_success(f"Connected to {self._base_request.url} with status code {response.status_code}")
+        elif response.status_code >= 400:
+            log_failure(f"Failed to connect to {self._base_request.url} | Status code: {response.status_code}")
+            return False
+            
         return True
     
     async def browse(self, stop_event : asyncio.Event, parallelism = 15):

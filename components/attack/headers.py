@@ -39,7 +39,7 @@ class Headers(BaseAttack):
                 
                 report.report_vulnerability(
                     severity='LOW',
-                    category='HTTP Header',
+                    category='HTTP Headers',
                     description=check["missing"],
                     details={
                         'Target': request.url,
@@ -58,7 +58,7 @@ class Headers(BaseAttack):
                 
                 report.report_vulnerability(
                     severity='LOW',
-                    category='HTTP Header',
+                    category='HTTP Headers',
                     description=check["invalid"],
                     details={
                         'Target': request.url,

@@ -12,6 +12,9 @@ def log_info(msg):
     
 def log_success(msg):
     console.print(f"[bold green]SUCCESS[/bold green] | {msg}")
+    
+def log_failure(msg):
+    console.print(f"[red]FAILURE[/red] | {msg}")
 
 def log_error(msg):
     console.print(f"[bold red]ERROR[/bold red] | {msg}")

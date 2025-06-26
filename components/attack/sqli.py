@@ -11,6 +11,7 @@ from difflib import SequenceMatcher
 import components.main.report as report
 from components.main.console import log_error, log_debug, log_vulnerability, log_detail, status_update
 from components.attack.base_attack import BaseAttack
+from components.parsers.html import HTML
 
 class SQLInjection(BaseAttack):
     name = 'sqli'
@@ -44,6 +45,7 @@ class SQLInjection(BaseAttack):
         
         self.semaphore = asyncio.Semaphore(20)
         self.tested_cookies = set()
+        self.logged_in = False
         
     def _load_payload_files(self):
         base = Path(__file__).parent.parent / 'payloads' / 'sqli'
@@ -105,23 +107,47 @@ class SQLInjection(BaseAttack):
 
 
     async def run(self, request, response):
+        status_update(request.url)
+        
+        request_html = HTML(response.text, str(request.url))
+        if request_html.logged_in():
+            self.logged_in = True
+            
+        #await self.test_cookies(request, response)
+        
         if not request.get_params and not request.post_params:
             return
         
-        await self.test_cookies(request, response)
-        
-        #print(f"Testing {request}")
-        status_update(request.url)
-        
         vulnerable_parameters = await self.potentially_injectable(request)
-        
         if not vulnerable_parameters:
             return
-        #print(vulnerable_parameters, request)
-
+        
+        html = HTML(response.text, str(response.url))
+        login_form, _, _ = html.find_login_form()
+        
+        if login_form and request == login_form:
+            auth_bypass_tasks = []
+            for payload in self.payloads['auth_bypass']:
+                for mutated, param in self.mutate_request(request, payload, mode='append'):
+                    if param in self.SKIP_PARAMS:
+                        continue
+                    auth_bypass_tasks.append(asyncio.create_task(self._test_auth_bypass(mutated, request, html, param, payload)))
+            try:
+                for task in asyncio.as_completed(auth_bypass_tasks):
+                    if await task:
+                        for t in auth_bypass_tasks:
+                            t.cancel()
+                        return
+            finally:
+                for t in auth_bypass_tasks:
+                    if not t.done():
+                        t.cancel()
+    
         error_tasks = []
         for payload in self.payloads['error']:
             for mutated, param in self.mutate_request(request, payload, mode='append'):
+                if param in self.SKIP_PARAMS:
+                        continue
                 if param in vulnerable_parameters:
                     error_tasks.append(asyncio.create_task( self._test_error(mutated, request, param, payload)))
         
@@ -136,9 +162,116 @@ class SQLInjection(BaseAttack):
                 if not t.done():
                     t.cancel()
         
+
         for param in vulnerable_parameters:
             if await self._test_union(request, param):
                 return
+
+    
+        base_response_time = getattr(response, 'elapsed', None)
+        if base_response_time is not None:
+            try:
+                base_response_time = base_response_time.total_seconds()
+            except AttributeError:
+                base_response_time = float(base_response_time)
+        else:
+            base_response_time = 0
+
+        time_tasks = []
+        for payload in self.payloads['time']:
+            for mutated, p in self.mutate_request(request, payload, mode='append'):
+                if p in self.SKIP_PARAMS:
+                        continue
+                if p in vulnerable_parameters:
+                    time_tasks.append(asyncio.create_task(
+                        self._test_time_payload(mutated, param, payload, base_response_time)
+                    ))
+
+        try:
+            for task in asyncio.as_completed(time_tasks):
+                if await task:
+                    for t in time_tasks:
+                        t.cancel()
+                    return
+            
+        finally:
+            for t in time_tasks:
+                if not t.done():
+                    t.cancel()
+                    
+    async def _test_auth_bypass(self, mutated, request, html, param, payload):
+        
+        if self.logged_in:
+            return False
+        
+        try:
+            async with self.semaphore:
+                resp = await self.crawler.send(mutated, timeout=3)
+                
+        except Exception as e:
+            return False
+        
+        resp_html = HTML(resp.text, str(resp.url))
+        if resp_html.logged_in():
+            log_vulnerability('CRITICAL', f'SQL Injection Auth Bypass Detected')
+            log_detail('Target', mutated.url)
+            log_detail('Method', mutated.method)
+            log_detail('Parameter', param)
+            log_detail('Payload', payload)
+            log_detail('Response Status Code', resp.status_code)
+            
+            report.report_vulnerability(
+                severity='CRITICAL',
+                category='SQL Injection',
+                description='SQL Injection Auth Bypass Detected',
+                details={
+                    'Target': mutated.url,
+                    'Method': mutated.method,
+                    'Parameter': param,
+                    'Payload': payload,
+                    'Response Status Code': resp.status_code,
+                }
+            )
+            print()
+            return True
+        
+    async def _test_time_payload(self, mutated, param, payload, base_response_time):
+        try:
+            async with self.semaphore:
+                start = time.time()
+                resp = await self.crawler.send(mutated, timeout=10)
+                elapsed = time.time() - start
+                
+        except Exception:
+            return None
+        
+        if elapsed - base_response_time >= 4.5:
+            log_vulnerability('CRITICAL', f'Time-based SQL Injection detected')
+            log_detail('Target', mutated.url)
+            log_detail('Method', mutated.method)
+            log_detail('Parameter', param)
+            log_detail('Payload', payload)
+            log_detail('Baseline Response Time', base_response_time)
+            log_detail('Response Time', elapsed)
+            log_detail('Delta', elapsed - base_response_time)
+            report.report_vulnerability(
+                severity='CRITICAL',
+                category='SQL Injection',
+                description='Time-based SQL Injection detected',
+                details={
+                    'Target': mutated.url,
+                    'Method': mutated.method,
+                    'Parameter': param,
+                    'Payload': payload,
+                    'Baseline Response Time': base_response_time,
+                    'Response Time': elapsed,
+                    'Delta': elapsed - base_response_time
+                }
+            )
+            print()
+            return param
+        return None
+
 
 
     async def test_cookies(self, request, response):
@@ -181,7 +314,7 @@ class SQLInjection(BaseAttack):
 
             orig_headers = dict(self.crawler.headers)
             for new_val, desc in trials:
-                temp_headers = dict(orig_headers)         # make a fresh copy  
+                temp_headers = dict(orig_headers)   
                 temp_headers['Cookie'] = "; ".join(
                     f"{cookie.name}={new_val if cookie.name == name else cookie.value}"
                     for cookie in cookies
@@ -342,8 +475,6 @@ class SQLInjection(BaseAttack):
 
     async def _test_error(self, mutated, request, param, payload):
         
-        if param == 'user_token':
-            return False
         #log_debug(f"{mutated} Testing {param} (error) with payload {payload!r}")
         
         try:
@@ -387,11 +518,6 @@ class SQLInjection(BaseAttack):
                 
                     
     async def _test_union(self, request, param):
-        """
-        Detect a UNION-based injection by:
-         1) Finding the column count via status codes (200 vs. 500).
-         2) Probing each column individually for reflection.
-        """
         max_columns = 12
         col_count   = None
 
@@ -467,3 +593,6 @@ class SQLInjection(BaseAttack):
                     
 
         return False
+    
+    
+    

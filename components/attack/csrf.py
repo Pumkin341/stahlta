@@ -23,7 +23,7 @@ class CSRF(BaseAttack):
         self.CSRF_TOKENS_HEADERS = ['X-CSRF-Token', 'X-CSRFToken', 'X-CSRF', 'X-XSRF-TOKEN', 'X-XSRF', 'X-XSRFToken', 'Csrf-Token', 'Csrf', 
             'X-Authenticity-Token', 'X-Authenticity', 'RequestVerificationToken', 'X-RequestVerificationToken', 'XSRF-TOKEN', 
             'anti_csrf', 'anti_csrf_token', 'X-Anti-CSRF-Token', 'X-AntiCsrfToken', 'X-Security-Token', 'X-Form-Token', 'X-Auth-Token', 
-            'X-CSRFTOKEN', 'Xsrf-Token-Header', 'Csrf-Token-Header', 'Sec-Csrf-Token', 'OWASP-CSRF-TOKEN', 'CSRF-TOKEN-HEADER', 'X-CSRF-TOKEN-HEADER']
+            'X-CSRFTOKEN', 'Xsrf-Token-Header', 'Csrf-Token-Header', 'Sec-Csrf-Token', 'CSRF-TOKEN-HEADER', 'X-CSRF-TOKEN-HEADER']
 
         self.s = lambda i : - sum(f * log(f, 2) for f in ((j / len(i)) for j in Counter(i).values()))
         
@@ -56,11 +56,11 @@ class CSRF(BaseAttack):
         log_detail('Method', request.method)
         log_detail('Form', request.post_params)
         if csrf_key:
-            details['CSRF Key'] = csrf_key
-            details['CSRF Value'] = csrf_value
-            
             log_detail('CSRF Key', csrf_key)
             log_detail('CSRF Value', csrf_value)
+            
+            details['CSRF Key'] = csrf_key
+            details['CSRF Value'] = csrf_value
         print()
             
         report.report_vulnerability(

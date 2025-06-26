@@ -5,6 +5,23 @@ import components.main.report as report
 
 import uuid
 
+import http.server
+import threading
+import socket
+
+class SSRFServer(http.server.BaseHTTPRequestHandler):
+    def do_GET(self):
+        print(f"[SSRF] Received GET: {self.path} from {self.client_address}")
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"OK")
+
+    def do_POST(self):
+        print(f"[SSRF] Received POST: {self.path} from {self.client_address}")
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"OK")
+
 
 class SSRF(BaseAttack):
     name = 'ssrf'

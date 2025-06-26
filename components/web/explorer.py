@@ -66,6 +66,7 @@ class Explorer:
             for form in html.forms_iterator():
                 #print(form)
                 if self._scope.check(form):
+                    #print(form)
    
                     if form.hostname not in self._hostnames:
                         form.depth = 0

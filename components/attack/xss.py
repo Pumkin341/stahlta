@@ -27,6 +27,9 @@ class XSS(BaseAttack):
         # print(request)
         # print(response.text)
         # print()
+        
+        status_update(request.url)
+        
         if not request.get_params and not request.post_params:
             return
         
@@ -37,6 +40,14 @@ class XSS(BaseAttack):
             for line in dom:
                 log_detail(line)
             print()
+            details = '\n'.join(dom)
+            details = re.sub(r'\x1b\[[0-9;]*m', '', details)
+            details = (details.replace("&", "&amp;")
+                            .replace("<", "&lt;")
+                            .replace(">", "&gt;"))
+            for word in ['document.write', 'innerHTML', 'document.location', 'eval', 'setTimeout']:
+                details = details.replace(word, f'<span style="color:#f66;font-weight:bold">{word}</span>')
+            pretty_details = f'<pre style="font-size:13px;background:#222;color:#eee;padding:8px;border-radius:6px;overflow-x:auto;"><code>{details}</code></pre>'
             
             report.report_vulnerability(
                 'LOW',
@@ -44,11 +55,16 @@ class XSS(BaseAttack):
                 'Potential DOM-based XSS found',
                 {
                     'Target': request.url,
-                    'Details': dom
+                    'Explanation': (
+                        "The following code block is extracted from the page's JavaScript. "
+                        "Relevant JavaScript sources (where user input may enter the code) and dangerous sinks (functions that can result in code execution) are highlighted for visibility in the report. "
+                        "If untrusted user input can reach one of these dangerous functions, it may be possible for an attacker to execute JavaScript in the browser (DOM-based XSS). "
+                        "Review the highlighted code to determine if user-controllable data is passed to functions like document.write, innerHTML, or similar without proper sanitization."
+                    ),
+                    'HTML_Details': pretty_details,
+                    'Details': ''
                 }
             )
-            
-        
         
         for mutated, param in self.mutate_request(request, 's74l7a', mode = 'replace'):
             occurences = await self.detect_context(mutated)
@@ -83,14 +99,12 @@ class XSS(BaseAttack):
                             t.cancel()
                     break
 
-            await asyncio.sleep(0)
-                        
-            
+            await asyncio.sleep(0)               
+                
     async def test_xss(self, request: Request, param, payload, occurences, positions):
 
-        efficiencies, mutated = await self.checker(request, param, payload, positions)
+        efficiencies, mutated, mutated_response = await self.checker(request, param, payload, positions)
         #log_debug(f'testing {mutated}')
-        status_update(mutated.url)
 
         payload_context = self.classify_xss_payload(payload)
         
@@ -108,7 +122,8 @@ class XSS(BaseAttack):
 
         bestEfficiency = max(matched_effs)
 
-        if bestEfficiency == 100:
+        csp_blocks = csp_blocks_inline(mutated_response.headers)
+        if bestEfficiency == 100 and not csp_blocks:
             url = mutated.url.replace('st4r7s', '')
             url = url.replace('3nd', '')
             
@@ -116,6 +131,7 @@ class XSS(BaseAttack):
             log_detail(f'Target', f'{url} {mutated.method}')
             log_detail(f'Parameter', param)
             log_detail(f'Payload', payload)
+            log_detail(f'Context', payload_context)
             log_detail(f'Efficiency', bestEfficiency)
             log_detail('')
             
@@ -128,17 +144,19 @@ class XSS(BaseAttack):
                     'Method': mutated.method,
                     'Parameter': param,
                     'Payload': payload,
+                    'Context': payload_context,
                     'Efficiency': bestEfficiency
                 }
             )
             return True
         
-        elif bestEfficiency >= 99:
+        elif bestEfficiency >= 99 and not csp_blocks:
             url = mutated.url.replace('st4r7s', '')
             url = url.replace('3nd', '')
             
             log_vulnerability('MEDIUM', f'Potential XSS Vulnerability Found')
-            log_detail(f'Target', f'{url} {mutated.method}')
+            log_detail(f'Target', f'{url}')
+            log_detail(f'Method', mutated.method)
             log_detail(f'Parameter', param)
             log_detail(f'Payload', payload)
             log_detail(f'Efficiency', bestEfficiency)
@@ -157,8 +175,30 @@ class XSS(BaseAttack):
                 }
             )
             return True
+
+        elif csp_blocks:
+            log_vulnerability('LOW', f'Potential XSS blocked by CSP')
+            log_detail(f'Target', mutated.url)
+            log_detail(f'Method', mutated.method)
+            log_detail(f'Parameter', param)
+            log_detail(f'Payload', payload)
+            log_detail(f'Efficiency', bestEfficiency)
+            log_detail('')
             
-        
+            report.report_vulnerability(
+                'LOW',
+                'XSS',
+                'Potential XSS blocked by CSP',
+                {
+                    'Target': mutated.url,
+                    'Method': mutated.method,
+                    'Parameter': param,
+                    'Payload': payload,
+                    'Efficiency': bestEfficiency
+                }
+            )
+            return True
+
     async def detect_context(self, mutated: Request):
 
         try:
@@ -316,7 +356,7 @@ class XSS(BaseAttack):
             if not payload:
                 continue
 
-            efficiencies, _ = await self.checker(request, param, payload, positions)
+            efficiencies, _, _ = await self.checker(request, param, payload, positions)
             efficiencies.extend([0] * (len(occurrences) - len(efficiencies)))
 
             for occurrence, efficiency in zip(occurrences, efficiencies):
@@ -328,17 +368,13 @@ class XSS(BaseAttack):
     async def checker(self, request: Request, param, payload, positions):
         check_string = 'st4r7s' + payload + '3nd'
 
-        for mutated, param in self.mutate_request(
-            request, check_string, mode='replace', parameter=param
-        ):
+        for mutated, param in self.mutate_request(request, check_string, mode='replace', parameter=param):
             async with self.semaphore:
                 response = await self.crawler.send(mutated, timeout=1.5)
 
         response_text = response.text
 
-        reflected_positions = [
-            match.start() for match in re.finditer('st4r7s', response_text)
-        ]
+        reflected_positions = [match.start() for match in re.finditer('st4r7s', response_text)]
         filled_positions = self.fill_holes(positions, reflected_positions)
 
         efficiencies = []
@@ -369,7 +405,7 @@ class XSS(BaseAttack):
 
             num += 1
 
-        return list(filter(None, efficiencies)), mutated
+        return list(filter(None, efficiencies)), mutated, response
 
 
     def fill_holes(self, original, new):
@@ -460,3 +496,25 @@ class XSS(BaseAttack):
         if sink_found or source_found:
             return highlighted
         return []
+
+def csp_blocks_inline(headers):
+        csp = ''
+        for k, v in headers.items():
+            if k.lower() == 'content-security-policy':
+                csp = v
+                break
+
+        # If no CSP header, assume not blocking
+        if not csp:
+            return False
+
+        # If unsafe-inline is present in script-src, inline scripts are allowed
+        script_src_match = re.search(r"script-src\s+([^;]*)", csp)
+        if script_src_match:
+            script_src = script_src_match.group(1)
+            # Allow inline scripts if unsafe-inline or strict-dynamic
+            if "'unsafe-inline'" in script_src or "'strict-dynamic'" in script_src:
+                return False
+
+        # Otherwise, block
+        return True
