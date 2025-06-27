@@ -54,25 +54,6 @@ def validate_url_endpoint(url: str):
     
     log_error('Error: The URL is not valid.')
     return False
-        
-def validate_wordlist(wordlist: str):
-    try:
-        with open(wordlist, 'r') as f:
-            lines = f.readlines()
-            if not lines:
-                log_error('The wordlist is empty.')
-                return False
-
-    except FileNotFoundError:
-        log_error(f'The wordlist file {wordlist} was not found.')
-        return False
-    
-    except Exception as e:
-        log_error(e)
-        return False
-    
-    return True
-
 
 def parse_headers_or_cookies(data_str: str, is_cookie: bool = False) -> dict:
     VALID_KV_PATTERN = re.compile(r"^[^;:=\s][^;\n\r\t:=]*[:=][^;:=\s][^;\n\r\t:=]*$")
@@ -166,12 +147,6 @@ async def stahlta_main():
    
     base_request = Request(url)
     stal = Stahlta(base_request, scope= args.scope)
-        
-    if args.wordlist:
-        if validate_wordlist(args.wordlist):
-            stal.wordlist_path = args.wordlist
-        else:
-            sys.exit(1)
             
     if args.output:
         output_path = report.validate_output_path(args.output)

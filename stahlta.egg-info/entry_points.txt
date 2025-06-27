@@ -1,0 +1,3 @@
+[console_scripts]
+stahlta = components.main.stahlta:stahlta_asyncio_run
+stahlta-gui = components.main.stahlta:stahltagui_main

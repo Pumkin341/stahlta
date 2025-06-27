@@ -190,16 +190,6 @@ class StahltaGUI(tk.Tk):
         b_out.grid(row=r, column=2, sticky="w", padx=(6, 0), pady=4)
         r += 1
 
-        # Wordlist File
-        ttk.Label(self.input_frame, text="Wordlist File:").grid(row=r, column=0, sticky="e", pady=4)
-        self.wordlist_var = tk.StringVar()
-        e_wordlist = ttk.Entry(self.input_frame, textvariable=self.wordlist_var)
-        e_wordlist.grid(row=r, column=1, sticky="ew", pady=4)
-        self.wordlist_var.trace_add("write", lambda *_: self.update_command_preview())
-        b_word = ttk.Button(self.input_frame, text="Browse…", command=self._choose_wordlist_file)
-        b_word.grid(row=r, column=2, sticky="w", padx=(6, 0), pady=4)
-        r += 1
-
         # Headers Field
         ttk.Label(self.input_frame, text="Headers:").grid(row=r, column=0, sticky="e", pady=4)
         self.headers_var = tk.StringVar()
@@ -252,14 +242,6 @@ class StahltaGUI(tk.Tk):
         if folder:
             self.output_var.set(folder)
 
-    def _choose_wordlist_file(self):
-        f = filedialog.askopenfilename(
-            title="Select Wordlist File",
-            filetypes=[("Text files", "*.txt"), ("All files", "*.*")]
-        )
-        if f:
-            self.wordlist_var.set(f)
-
     def update_command_preview(self):
         exe = get_stahlta_executable()
         cmd = [exe]
@@ -293,10 +275,6 @@ class StahltaGUI(tk.Tk):
         output = self.output_var.get().strip()
         if output:
             cmd += ["-o", output]
-
-        wordlist = self.wordlist_var.get().strip()
-        if wordlist:
-            cmd += ["-w", wordlist]
 
         headers = self.headers_var.get().strip()
         if headers:
@@ -366,10 +344,6 @@ class StahltaGUI(tk.Tk):
         output = self.output_var.get().strip()
         if output:
             args += ["-o", output]
-
-        wordlist = self.wordlist_var.get().strip()
-        if wordlist:
-            args += ["-w", wordlist]
 
         headers = self.headers_var.get().strip()
         if headers:
