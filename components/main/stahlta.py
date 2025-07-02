@@ -3,6 +3,7 @@ import sys
 import signal
 import json
 import re
+import time
 from urllib.parse import urlparse
 from http.cookiejar import CookieJar, Cookie
 
@@ -127,6 +128,9 @@ def printBanner():
 async def stahlta_main():
 
     printBanner()
+    
+    start = time.time()
+    
     args = parse_cli()
     parts = urlparse(args.url)
     
@@ -220,10 +224,16 @@ async def stahlta_main():
         except NotImplementedError:
             pass
         
+    end = time.time()
+    elapsed_time = end - start
+    minutes, seconds = divmod(elapsed_time, 60)
+    log_info(f"Scan time: {int(minutes)} minutes, {seconds:.2f} seconds.")
+    
     scan_info = {
         "Target": url,
         "Headless": args.headless,
-        "Resources Scanned": stal.count_resources()
+        "Resources Scanned": stal.count_resources(),
+        "Scan Time": f"{int(minutes)} minutes, {seconds:.2f} seconds",
     }
     report.generate_html_report(output_path, scan_info)
     log_success(f'Report generated at {output_path}. \n')

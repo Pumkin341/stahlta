@@ -118,7 +118,7 @@ def generate_html_report(output_path: str, total_resources: int, scan_info: dict
         '  <title>Stahlta Scan Report</title>',
         '  <style>',
         '    body { background-color: #121212; color: #e0e0e0; font-family: Arial, sans-serif; margin: 0; padding: 0; }',
-        '    .container { max-width: 1200px; margin: 20px auto; background-color: #1e1e1e; padding: 30px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5); }',
+        '    .container { max-width: 1800px; margin: 20px auto; background-color: #1e1e1e; padding: 30px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5); }',
         '    h1 { text-align: center; font-size: 2.5em; margin-bottom: 10px; color: #ffffff; }',
         '    h2, h3 { color: #e0e0e0; margin-top: 30px; margin-bottom: 10px; }',
         '    .summary { margin-bottom: 30px; }',

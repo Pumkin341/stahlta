@@ -7,14 +7,16 @@ from pathlib import Path
 
 from httpx import ReadTimeout, RequestError
 
-import components.main.report as report
 from components.main.console import log_vulnerability, log_detail, status_update
 from components.attack.base_attack import BaseAttack
 from components.web.request import Request
 
 class CommandInjection(BaseAttack):
     name = 'cmd'
-    
+    # Skip these parameters entirely
+    SKIP_PARAMS = {'csrf_token', 'session_id', 'auth_token', 'auth_key', 'token'}
+
+    # Regex patterns indicating execution or errors, with boundaries to avoid false positives
     WARNING_PATTERNS = [
         r'Warning: exec\(', r'Warning: system\(', r'Warning: shell_exec\(',
         r'Traceback \(most recent call last\):', r'(^|\s)sh: ', r'(^|\s)bash: ', r'cmd not found',
@@ -36,12 +38,8 @@ class CommandInjection(BaseAttack):
                 continue
             sec = cfg[section]
             payload = sec.get('payload', '').strip()
-            rules = []
-            for line in sec.get('rules', '').splitlines():
-                tag = line.strip()
-                if not tag:
-                    continue
-                rules.append(html.unescape(tag.replace('[SPACE]', ' ')))
+            rules = [html.unescape(line.strip().replace('[SPACE]', ' '))
+                     for line in sec.get('rules', '').splitlines() if line.strip()]
             desc = sec.get('description', section)
             ptype = sec.get('type', 'pattern').strip()
             timeout = sec.getint('timeout', 5) if ptype == 'time' else None
@@ -54,15 +52,16 @@ class CommandInjection(BaseAttack):
             })
         return payloads
 
-    async def run(self, mutated: Request, response):
-        status_update(mutated.url)
-        if not mutated.get_params and not mutated.post_params:
+    async def run(self, request: Request, response):
+        status_update(request.url)
+        if not request.get_params and not request.post_params:
             return
-
         tasks = []
         for entry in self.payloads:
-            for mutated_req, param in self.mutate_request(mutated, entry['payload'], mode='append'):
-                tasks.append(asyncio.create_task(self._test_payload(mutated_req, response, param, entry)))
+            for mutated_req, param in self.mutate_request(request, entry['payload'], mode='append'):
+                if param in self.SKIP_PARAMS:
+                    continue
+                tasks.append(asyncio.create_task(self._test_payload(mutated_req, param, entry)))
 
         try:
             for task in asyncio.as_completed(tasks):
@@ -75,108 +74,58 @@ class CommandInjection(BaseAttack):
                 if not t.done():
                     t.cancel()
 
-    async def _test_payload(self, mutated: Request, original_response, param: str, entry: dict):
-        """Test a single payload entry using time, pattern, and warning oracles"""
+    async def _test_payload(self, req: Request, param: str, entry: dict):
         ptype = entry.get('type', 'pattern')
         payload = entry['payload']
         desc = entry['description']
         rules = entry['rules']
-        
-        baseline = original_response.elapsed.total_seconds() 
+        timeout_threshold = entry.get('timeout', 5)
 
         # 1) Time-based (blind) injection
         if ptype == 'time':
-            
+            if req.url in self.false_positive_timeouts:
+                return False
             try:
-                time_response = await self.crawler.send(mutated, timeout=5 + baseline + 2)
-            
-            except (ReadTimeout, RequestError) as e:
-                return False
-            
-            if time_response.status_code != original_response.status_code:
-                return False
-            
-            elapsed = time_response.elapsed.total_seconds()
-            if elapsed >= baseline + 5 and elapsed < baseline + 5 + 2:
-                log_vulnerability('HIGH', f'{desc} Detected (Time-based)')
-                log_detail('Target', mutated.url)
-                log_detail('Method', mutated.method)
+                # If server does not respond within threshold, ReadTimeout is raised
+                await self.crawler.send(req, timeout=timeout_threshold)
+            except ReadTimeout:
+                log_vulnerability('HIGH', f'Blind Command Execution Detected ({desc})')
+                log_detail('Target', req.url)
+                log_detail('Method', req.method)
                 log_detail('Parameter', param)
                 log_detail('Payload', payload)
-                log_detail('Elapsed Time', elapsed)
-                print()
-                
-                report.report_vulnerability(
-                    severity='HIGH',
-                    category='Command Injection',
-                    description=f'{desc} Detected (Time-based)',
-                    details={
-                        'Target': mutated.url,
-                        'Method': mutated.method,
-                        'Parameter': param,
-                        'Payload': payload,
-                        'Elapsed Time': elapsed
-                    }
-                )
                 return True
-            
-        
+            except RequestError:
+                return False
+            return False
+
+        # 2) Pattern-based detection
         try:
-            mutated_response = await self.crawler.send(mutated, timeout=5)
+            resp = await self.crawler.send(req, timeout=5)
         except Exception:
             return False
-        text = mutated_response.text or ''
+        text = resp.text or ''
         for rule in rules:
             if rule in text:
-                log_vulnerability('HIGH', f'{desc} Detected')
-                log_detail('Target', mutated.url)
-                log_detail('Method', mutated.method)
+                log_vulnerability('HIGH', f'Command Execution Detected ({desc})')
+                log_detail('Target', req.url)
+                log_detail('Method', req.method)
                 log_detail('Parameter', param)
                 log_detail('Payload', payload)
                 log_detail('Matched Rule', rule)
-                log_detail('Status Code', mutated_response.status_code)
-                print()
-                
-                report.report_vulnerability(
-                    severity='HIGH',
-                    category='Command Injection',
-                    description=f'{desc} Detected',
-                    details={
-                        'Target': mutated.url,
-                        'Method': mutated.method,
-                        'Parameter': param,
-                        'Payload': payload,
-                        'Matched Rule': rule,
-                        'Status Code': mutated_response.status_code
-                    }
-                )
+                log_detail('Status Code', resp.status_code)
                 return True
 
         # 3) Warning-based detection
         for pattern in self.WARNING_PATTERNS:
             if re.search(pattern, text):
-                log_vulnerability('HIGH', f'{desc} Warning Detected')
-                log_detail('Target', mutated.url)
-                log_detail('Method', mutated.method)
+                log_vulnerability('HIGH', f'Warning Detected ({desc})')
+                log_detail('Target', req.url)
+                log_detail('Method', req.method)
                 log_detail('Parameter', param)
                 log_detail('Payload', payload)
                 log_detail('Warning Pattern', pattern)
-                log_detail('Status Code', mutated_response.status_code)
-                print()
-                
-                report.report_vulnerability(
-                    severity='HIGH',
-                    category='Command Injection',
-                    description=f'Warning detected: {desc}',
-                    details={
-                        'Target': mutated.url,
-                        'Method': mutated.method,
-                        'Parameter': param,
-                        'Payload': payload,
-                        'Warning Pattern': pattern,
-                        'Status Code': mutated_response.status_code
-                    }
-                )
+                log_detail('Status Code', resp.status_code)
                 return True
 
         return False

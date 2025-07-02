@@ -113,7 +113,7 @@ class SQLInjection(BaseAttack):
         if request_html.logged_in():
             self.logged_in = True
             
-        #await self.test_cookies(request, response)
+        await self.test_cookies(request, response)
         
         if not request.get_params and not request.post_params:
             return
@@ -240,11 +240,11 @@ class SQLInjection(BaseAttack):
             async with self.semaphore:
                 start = time.time()
                 resp = await self.crawler.send(mutated, timeout=10)
-                elapsed = time.time() - start
                 
         except Exception:
             return None
         
+        elapsed = time.time() - start
         if elapsed - base_response_time >= 4.5:
             log_vulnerability('CRITICAL', f'Time-based SQL Injection detected')
             log_detail('Target', mutated.url)
@@ -278,15 +278,16 @@ class SQLInjection(BaseAttack):
        
         cookies = self.crawler.cookies.jar
         
-        if not cookies or request.url in self.tested_cookies:
-            return
-        self.tested_cookies.add(request.url)
-        
-        
         for cookie in cookies:
             trials = []
             name = cookie.name
             val = cookie.value
+            
+            # print(f"Testing cookie: {name} = {val}")
+            # print(self.tested_cookies)
+            # print()
+            if name in self.tested_cookies:
+                continue
             
             decoded_data = None
 
@@ -342,6 +343,9 @@ class SQLInjection(BaseAttack):
                         }
                     )
                     print()
+                    
+                    self.tested_cookies.add(name)
+                    
                     return 
                 
                 if resp.status_code != response.status_code:
@@ -364,6 +368,8 @@ class SQLInjection(BaseAttack):
                         }
                     )
                     print()
+                    
+                    self.tested_cookies.add(name)
                     return 
 
         return 
