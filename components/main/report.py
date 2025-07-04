@@ -84,16 +84,8 @@ def report_vulnerability(severity: str, category: str, description: str, details
     }
     vulnerabilities.append(entry)
 
-def generate_html_report(output_path: str, total_resources: int, scan_info: dict = None):
-    """
-    scan_info example:
-        {
-            "Target": "https://example.com",
-            "Headless": "yes",
-            "Resources Scanned": 123,
-            ...
-        }
-    """
+def generate_html_report(output_path: str, scan_info: dict = None):
+
     os.makedirs(os.path.dirname(output_path) or '.', exist_ok=True)
 
     now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')

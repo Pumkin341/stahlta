@@ -235,6 +235,7 @@ async def stahlta_main():
         "Resources Scanned": stal.count_resources(),
         "Scan Time": f"{int(minutes)} minutes, {seconds:.2f} seconds",
     }
+    
     report.generate_html_report(output_path, scan_info)
     log_success(f'Report generated at {output_path}. \n')
        

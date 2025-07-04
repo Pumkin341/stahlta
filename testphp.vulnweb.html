@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stahlta Scan Report</title>
+  <style>
+    body { background-color: #121212; color: #e0e0e0; font-family: Arial, sans-serif; margin: 0; padding: 0; }
+    .container { max-width: 1800px; margin: 20px auto; background-color: #1e1e1e; padding: 30px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5); }
+    h1 { text-align: center; font-size: 2.5em; margin-bottom: 10px; color: #ffffff; }
+    h2, h3 { color: #e0e0e0; margin-top: 30px; margin-bottom: 10px; }
+    .summary { margin-bottom: 30px; }
+    .summary p { margin: 6px 0; font-size: 1em; }
+    .scan-info { background: #222; padding: 12px 18px; border-radius: 7px; margin-bottom: 20px; }
+    .scan-info strong { color: #fff; }
+    ul { padding-left: 20px; }
+    .vuln-list { list-style: none; padding: 0; }
+    .vuln-item { border: 1px solid #333; border-left: 5px solid transparent; border-radius: 4px; padding: 16px; margin-bottom: 20px; background-color: #2a2a2a; transition: background-color 0.2s; }
+    .vuln-item:hover { background-color: #333333; }
+    .severity-label { font-weight: bold; padding: 2px 6px; border-radius: 4px; color: #ffffff; margin-right: 8px; }
+    .sev-CRITICAL .severity-label { background-color: #b71c1c; }
+    .sev-HIGH .severity-label     { background-color: #d32f2f; }
+    .sev-MEDIUM .severity-label   { background-color: #f57c00; color: #000000; }
+    .sev-LOW .severity-label      { background-color: #388e3c; }
+    .vuln-item p { margin: 8px 0; font-size: 1em; }
+    .vuln-details { margin-top: 8px; margin-left: 16px; font-size: 0.95em; color: #cfcfcf; }
+    .vuln-prevention { margin-top: 10px; margin-left: 16px; font-size: 0.98em; background: #19202a; color: #a6e3a1; padding: 10px 16px; border-radius: 5px; border-left: 4px solid #4caf50; }
+    .generated-on { text-align: center; font-size: 1.08em; color: #c9d1d9; margin-bottom: 16px; }
+    .no-vulns { font-style: italic; color: #757575; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Stahlta Scan Report</h1>
+    <div class="summary">
+      <div class="generated-on"><strong>Generated on:</strong> 2025-07-04 01:21:32</div>
+      <div class="scan-info">
+        <p><strong>Target:</strong> http://testphp.vulnweb.com/</p>
+        <p><strong>Headless:</strong> no</p>
+        <p><strong>Resources Scanned:</strong> 40</p>
+        <p><strong>Scan Time:</strong> 7 minutes, 10.57 seconds</p>
+      </div>
+      <h3>By Severity:</h3>
+      <ul>
+        <li><span class="severity-label sev-CRITICAL">CRITICAL</span>: 37</li>
+        <li><span class="severity-label sev-LOW">LOW</span>: 11</li>
+      </ul>
+    </div>
+    <h2>Vulnerabilities Details</h2>
+    <h3>CSRF</h3>
+    <ul class="vuln-list">
+      <li class="vuln-item sev-LOW">
+        <p><span class="severity-label sev-LOW">LOW</span>There is no Anti-CSRF token</p>
+        <p><strong>Timestamp:</strong> 2025-07-04 01:21:14</p>
+        <div class="vuln-details"><strong>Details:</strong><br><strong>Target:</strong> http://testphp.vulnweb.com/search.php?test=query<br><strong>Method:</strong> POST<br><strong>Form:</strong> {&#x27;searchFor&#x27;: &#x27;default&#x27;, &#x27;goButton&#x27;: &#x27;go&#x27;}</div>
+      </li>
+      <li class="vuln-item sev-LOW">
+        <p><span class="severity-label sev-LOW">LOW</span>There is no Anti-CSRF token</p>
+        <p><strong>Timestamp:</strong> 2025-07-04 01:21:14</p>
+        <div class="vuln-details"><strong>Details:</strong><br><strong>Target:</strong> http://testphp.vulnweb.com/userinfo.php<br><strong>Method:</strong> POST<br><strong>Form:</strong> {&#x27;urname&#x27;: &#x27;John Smith&#x27;, &#x27;ucc&#x27;: &#x27;1234-5678-2300-9000&#x27;, &#x27;uemail&#x27;: &#x27;email@email.com&#x27;, &#x27;uphone&#x27;: &#x27;2323345&#x27;, &#x27;update&#x27;: &#x27;update&#x27;, &#x27;uaddress&#x27;: &#x27;Hi there!&#x27;}</div>
+      </li>
+      <li class="vuln-item sev-LOW">
+        <p><span class="severity-label sev-LOW">LOW</span>There is no Anti-CSRF token</p>
+        <p><strong>Timestamp:</strong> 2025-07-04 01:21:14</p>
+        <div class="vuln-details"><strong>Details:</strong><br><strong>Target:</strong> http://testphp.vulnweb.com/guestbook.php<br><strong>Method:</strong> POST<br><strong>Form:</strong> {&#x27;name&#x27;: &#x27;test&#x27;, &#x27;submit&#x27;: &#x27;add message&#x27;, &#x27;text&#x27;: &#x27;Hi there!&#x27;}</div>
+      </li>
+      <li class="vuln-item sev-LOW">
+        <p><span class="severity-label sev-LOW">LOW</span>There is no Anti-CSRF token</p>
+        <p><strong>Timestamp:</strong> 2025-07-04 01:21:14</p>
+        <div class="vuln-details"><strong>Details:</strong><br><strong>Target:</strong> http://testphp.vulnweb.com/userinfo.php<br><strong>Method:</strong> POST<br><strong>Form:</strong> {&#x27;uname&#x27;: &#x27;default&#x27;, &#x27;pass&#x27;: &#x27;St@hlta20_&#x27;}</div>
+      </li>
+      <li class="vuln-item sev-LOW">
+        <p><span class="severity-label sev-LOW">LOW</span>There is no Anti-CSRF token</p>
+        <p><strong>Timestamp:</strong> 2025-07-04 01:21:14</p>
+        <div class="vuln-details"><strong>Details:</strong><br><strong>Target:</strong> http://testphp.vulnweb.com/secured/newuser.php<br><strong>Method:</strong> POST<br><strong>Form:</strong> {&#x27;uuname&#x27;: &#x27;default&#x27;, &#x27;upass&#x27;: &#x27;St@hlta20_&#x27;, &#x27;upass2&#x27;: &#x27;St@hlta20_&#x27;, &#x27;urname&#x27;: &#x27;default&#x27;, &#x27;ucc&#x27;: &#x27;default&#x27;, &#x27;uemail&#x27;: &#x27;test@gmail.com&#x27;, &#x27;uphone&#x27;: &#x27;default&#x27;, &#x27;signup&#x27;: &#x27;signup&#x27;, &#x27;uaddress&#x27;: &#x27;Hi there!&#x27;}</div>
+      </li>
+    </ul>
+    <div class="vuln-prevention"><strong>How to prevent:</strong> <ul><li>Use anti-CSRF tokens in forms and AJAX requests.</li><li>Validate the origin of requests on the server side.</li><li>Implement SameSite cookie attributes.</li><li>Use secure headers like X-Frame-Options to prevent clickjacking.</li></ul></div>
+    <h3>Cookie Flags</h3>
+    <ul class="vuln-list">
+      <li class="vuln-item sev-LOW">
+        <p><span class="severity-label sev-LOW">LOW</span>Cookies secure flag is not set</p>
+        <p><strong>Timestamp:</strong> 2025-07-04 01:21:14</p>
+        <div class="vuln-details"><strong>Details:</strong><br><strong>Target:</strong> http://testphp.vulnweb.com/<br><strong>Cookie:</strong> login</div>
+      </li>
+      <li class="vuln-item sev-LOW">
+        <p><span class="severity-label sev-LOW">LOW</span>Cookies HttpOnly flag is not set</p>
+        <p><strong>Timestamp:</strong> 2025-07-04 01:21:14</p>
+        <div class="vuln-details"><strong>Details:</strong><br><strong>Target:</strong> http://testphp.vulnweb.com/<br><strong>Cookie:</strong> login</div>
+      </li>
+      <li class="vuln-item sev-LOW">
+        <p><span class="severity-label sev-LOW">LOW</span>Cookies SameSite flag is not set</p>
+        <p><strong>Timestamp:</strong> 2025-07-04 01:21:14</p>
+        <div class="vuln-details"><strong>Details:</strong><br><strong>Target:</strong> http://testphp.vulnweb.com/<br><strong>Cookie:</strong> login</div>
+      </li>
+    </ul>
+    <div class="vuln-prevention"><strong>How to prevent:</strong> <ul><li>Set the HttpOnly flag on cookies to prevent JavaScript access.</li><li>Use the Secure flag to ensure cookies are only sent over HTTPS.</li><li>Implement the SameSite attribute to control cross-site cookie behavior.</li><li>Regularly review and update cookie policies.</li></ul></div>
+    <h3>HTTP Headers</h3>
+    <ul class="vuln-list">
+      <li class="vuln-item sev-LOW">
+        <p><span class="severity-label sev-LOW">LOW</span>Missing X-Frame-Options header (Clickjacking risk)</p>
+        <p><strong>Timestamp:</strong> 2025-07-04 01:21:14</p>
+        <div class="vuln-details"><strong>Details:</strong><br><strong>Target:</strong> http://testphp.vulnweb.com/<br><strong>Header:</strong> X-Frame-Options</div>
+      </li>
+      <li class="vuln-item sev-LOW">
+        <p><span class="severity-label sev-LOW">LOW</span>Missing X-Content-Type-Options header (MIME confusion risk)</p>
+        <p><strong>Timestamp:</strong> 2025-07-04 01:21:14</p>
+        <div class="vuln-details"><strong>Details:</strong><br><strong>Target:</strong> http://testphp.vulnweb.com/<br><strong>Header:</strong> X-Content-Type-Options</div>
+      </li>
+      <li class="vuln-item sev-LOW">
+        <p><span class="severity-label sev-LOW">LOW</span>Missing Strict-Transport-Security header (no HTTPS enforcement)</p>
+        <p><strong>Timestamp:</strong> 2025-07-04 01:21:14</p>
+        <div class="vuln-details"><strong>Details:</strong><br><strong>Target:</strong> http://testphp.vulnweb.com/<br><strong>Header:</strong> Strict-Transport-Security</div>
+      </li>
+    </ul>
+    <div class="vuln-prevention"><strong>How to prevent:</strong> <ul><li>Use security headers like Content Security Policy (CSP), X-Content-Type-Options, and X-Frame-Options.</li><li>Implement strict Transport Security (HSTS) to enforce HTTPS.</li><li>Regularly review and update security headers.</li><li>Use tools to scan and validate header configurations.</li></ul></div>
+    <h3>SQL Injection</h3>
+    <ul class="vuln-list">
+      <li class="vuln-item sev-CRITICAL">
+        <p><span class="severity-label sev-CRITICAL">CRITICAL</span>SQL Injection Error Based Detected</p>
+        <p><strong>Timestamp:</strong> 2025-07-04 01:14:25</p>
+        <div class="vuln-details"><strong>Details:</strong><br><strong>Target:</strong> http://testphp.vulnweb.com/search.php?test=queryOR+3409%3D3409+AND+%28%27pytW%27+LIKE+%27pytW<br><strong>Method:</strong> POST<br><strong>Parameter:</strong> test<br><strong>Payload:</strong> OR 3409=3409 AND (&#x27;pytW&#x27; LIKE &#x27;pytW<br><strong>Database:</strong> MySQL</div>
+      </li>
+      <li class="vuln-item sev-CRITICAL">
+        <p><span class="severity-label sev-CRITICAL">CRITICAL</span>SQL Injection Error Based Detected</p>
+        <p><strong>Timestamp:</strong> 2025-07-04 01:14:25</p>
+        <div class="vuln-details"><strong>Details:</strong><br><strong>Target:</strong> http://testphp.vulnweb.com/search.php?test=queryOR+3409%3D3409+AND+%28%27pytW%27+LIKE+%27pytY<br><strong>Method:</strong> POST<br><strong>Parameter:</strong> test<br><strong>Payload:</strong> OR 3409=3409 AND (&#x27;pytW&#x27; LIKE &#x27;pytY<br><strong>Database:</strong> MySQL</div>
+      </li>
+      <li class="vuln-item sev-CRITICAL">
+        <p><span class="severity-label sev-CRITICAL">CRITICAL</span>SQL Injection Error Based Detected</p>
+        <p><strong>Timestamp:</strong> 2025-07-04 01:14:26</p>
+        <div class="vuln-details"><strong>Details:</strong><br><strong>Target:</strong> http://testphp.vulnweb.com/search.php?test=queryAND+1083%3D1083+AND+%28%271427%3D1427<br><strong>Method:</strong> POST<br><strong>Parameter:</strong> test<br><strong>Payload:</strong> AND 1083=1083 AND (&#x27;1427=1427<br><strong>Database:</strong> MySQL</div>
+      </li>
+      <li class="vuln-item sev-CRITICAL">
+        <p><span class="severity-label sev-CRITICAL">CRITICAL</span>SQL Injection Error Based Detected</p>
+        <p><strong>Timestamp:</strong> 2025-07-04 01:14:26</p>
+        <div class="vuln-details"><strong>Details:</strong><br><strong>Target:</strong> http://testphp.vulnweb.com/search.php?test=queryOR+3409%3D3409+AND+%28%27pytW%27+LIKE+%27pytW<br><strong>Method:</strong> GET<br><strong>Parameter:</strong> test<br><strong>Payload:</strong> OR 3409=3409 AND (&#x27;pytW&#x27; LIKE &#x27;pytW<br><strong>Database:</strong> MySQL</div>
+      </li>
+      <li class="vuln-item sev-CRITICAL">
+        <p><span class="severity-label sev-CRITICAL">CRITICAL</span>SQL Injection Error Based Detected</p>
+        <p><strong>Timestamp:</strong> 2025-07-04 01:14:29</p>
+        <div class="vuln-details"><strong>Details:</strong><br><strong>Target:</strong> http://testphp.vulnweb.com/userinfo.php<br><strong>Method:</strong> POST<br><strong>Parameter:</strong> ucc<br><strong>Payload:</strong> OR 3409=3409 AND (&#x27;pytW&#x27; LIKE &#x27;pytW<br><strong>Database:</strong> MySQL</div>
+      </li>
+      <li class="vuln-item sev-CRITICAL">
+        <p><span class="severity-label sev-CRITICAL">CRITICAL</span>SQL Injection Error Based Detected</p>
+        <p><strong>Timestamp:</strong> 2025-07-04 01:14:32</p>
+        <div class="vuln-details"><strong>Details:</strong><br><strong>Target:</strong> http://testphp.vulnweb.com/listproducts.php?cat=3OR+1%3D1<br><strong>Method:</strong> GET<br><strong>Parameter:</strong> cat<br><strong>Payload:</strong> OR 1=1<br><strong>Database:</strong> MySQL</div>
+      </li>
+      <li class="vuln-item sev-CRITICAL">
+        <p><span class="severity-label sev-CRITICAL">CRITICAL</span>SQL Injection Error Based Detected</p>
+        <p><strong>Timestamp:</strong> 2025-07-04 01:14:33</p>
+        <div class="vuln-details"><strong>Details:</strong><br><strong>Target:</strong> http://testphp.vulnweb.com/artists.php?artist=3OR+1%3D1<br><strong>Method:</strong> GET<br><strong>Parameter:</strong> artist<br><strong>Payload:</strong> OR 1=1<br><strong>Database:</strong> MySQL</div>
+      </li>
+      <li class="vuln-item sev-CRITICAL">
+        <p><span class="severity-label sev-CRITICAL">CRITICAL</span>SQL Injection UNION based SQLi detected</p>
+        <p><strong>Timestamp:</strong> 2025-07-04 01:14:44</p>
+        <div class="vuln-details"><strong>Details:</strong><br><strong>Target:</strong> http://testphp.vulnweb.com/hpp/params.php?p=valid%27+UNION+SELECT+0x7A441720--&amp;pp=12<br><strong>Method:</strong> GET<br><strong>Parameter:</strong> p<br><strong>Payload:</strong> &#x27; UNION SELECT 0x7A441720--</div>
+      </li>
+      <li class="vuln-item sev-CRITICAL">
+        <p><span class="severity-label sev-CRITICAL">CRITICAL</span>SQL Injection Error Based Detected</p>
+        <p><strong>Timestamp:</strong> 2025-07-04 01:14:46</p>
+        <div class="vuln-details"><strong>Details:</strong><br><strong>Target:</strong> http://testphp.vulnweb.com/userinfo.php<br><strong>Method:</strong> POST<br><strong>Parameter:</strong> pass<br><strong>Payload:</strong> OR 3409=3409 AND (&#x27;pytW&#x27; LIKE &#x27;pytW<br><strong>Database:</strong> MySQL</div>
+      </li>
+      <li class="vuln-item sev-CRITICAL">
+        <p><span class="severity-label sev-CRITICAL">CRITICAL</span>SQL Injection Error Based Detected</p>
+        <p><strong>Timestamp:</strong> 2025-07-04 01:14:47</p>
+        <div class="vuln-details"><strong>Details:</strong><br><strong>Target:</strong> http://testphp.vulnweb.com/listproducts.php?artist=3OR+1%3D1<br><strong>Method:</strong> GET<br><strong>Parameter:</strong> artist<br><strong>Payload:</strong> OR 1=1<br><strong>Database:</strong> MySQL</div>
+      </li>
+      <li class="vuln-item sev-CRITICAL">
+        <p><span class="severity-label sev-CRITICAL">CRITICAL</span>SQL Injection Error Based Detected</p>
+        <p><strong>Timestamp:</strong> 2025-07-04 01:14:54</p>
+        <div class="vuln-details"><strong>Details:</strong><br><strong>Target:</strong> http://testphp.vulnweb.com/secured/newuser.php<br><strong>Method:</strong> POST<br><strong>Parameter:</strong> uuname<br><strong>Payload:</strong> OR 3409=3409 AND (&#x27;pytW&#x27; LIKE &#x27;pytW<br><strong>Database:</strong> MySQL</div>
+      </li>
+      <li class="vuln-item sev-CRITICAL">
+        <p><span class="severity-label sev-CRITICAL">CRITICAL</span>SQL Injection Error Based Detected</p>
+        <p><strong>Timestamp:</strong> 2025-07-04 01:14:54</p>
+        <div class="vuln-details"><strong>Details:</strong><br><strong>Target:</strong> http://testphp.vulnweb.com/secured/newuser.php<br><strong>Method:</strong> POST<br><strong>Parameter:</strong> uuname<br><strong>Payload:</strong> OR 3409=3409 AND (&#x27;pytW&#x27; LIKE &#x27;pytY<br><strong>Database:</strong> MySQL</div>
+      </li>
+    </ul>
+    <div class="vuln-prevention"><strong>How to prevent:</strong> <ul><li>Use parameterized queries (prepared statements) to separate SQL logic from data.</li><li>Validate and sanitize all user inputs on both client and server side.</li><li>Use ORM frameworks to abstract database queries.</li><li>Limit database permissions for the application user.</li><li>Avoid displaying detailed database errors to users.</li></ul></div>
+    <h3>XSS</h3>
+    <ul class="vuln-list">
+      <li class="vuln-item sev-CRITICAL">
+        <p><span class="severity-label sev-CRITICAL">CRITICAL</span>XSS Reflected Vulnerability</p>
+        <p><strong>Timestamp:</strong> 2025-07-04 01:14:56</p>
+        <div class="vuln-details"><strong>Details:</strong><br><strong>Target:</strong> http://testphp.vulnweb.com/search.php?test=query<br><strong>Method:</strong> POST<br><strong>Parameter:</strong> searchFor<br><strong>Payload:</strong> &lt;script&gt;a=prompt,a()&lt;/script&gt;<br><strong>Efficiency:</strong> 100<br><strong>Confidance:</strong> 10</div>
+      </li>
+      <li class="vuln-item sev-CRITICAL">
+        <p><span class="severity-label sev-CRITICAL">CRITICAL</span>XSS Reflected Vulnerability</p>
+        <p><strong>Timestamp:</strong> 2025-07-04 01:14:56</p>
+        <div class="vuln-details"><strong>Details:</strong><br><strong>Target:</strong> http://testphp.vulnweb.com/search.php?test=query<br><strong>Method:</strong> POST<br><strong>Parameter:</strong> searchFor<br><strong>Payload:</strong> &lt;script&gt;confirm()&lt;/script&gt;<br><strong>Efficiency:</strong> 100<br><strong>Confidance:</strong> 10</div>
+      </li>
+      <li class="vuln-item sev-CRITICAL">
+        <p><span class="severity-label sev-CRITICAL">CRITICAL</span>XSS Reflected Vulnerability</p>
+        <p><strong>Timestamp:</strong> 2025-07-04 01:15:00</p>
+        <div class="vuln-details"><strong>Details:</strong><br><strong>Target:</strong> http://testphp.vulnweb.com/userinfo.php<br><strong>Method:</strong> POST<br><strong>Parameter:</strong> urname<br><strong>Payload:</strong> &lt;script&gt;confirm()&lt;/script&gt;<br><strong>Efficiency:</strong> 100<br><strong>Confidance:</strong> 10</div>
+      </li>
+      <li class="vuln-item sev-CRITICAL">
+        <p><span class="severity-label sev-CRITICAL">CRITICAL</span>XSS Reflected Vulnerability</p>
+        <p><strong>Timestamp:</strong> 2025-07-04 01:15:07</p>
+        <div class="vuln-details"><strong>Details:</strong><br><strong>Target:</strong> http://testphp.vulnweb.com/userinfo.php<br><strong>Method:</strong> POST<br><strong>Parameter:</strong> ucc<br><strong>Payload:</strong> &quot;&gt;&lt;htML onMOUseOvER = [1].find(confirm) //<br><strong>Efficiency:</strong> 100<br><strong>Confidance:</strong> 9</div>
+      </li>
+      <li class="vuln-item sev-CRITICAL">
+        <p><span class="severity-label sev-CRITICAL">CRITICAL</span>XSS Reflected Vulnerability</p>
+        <p><strong>Timestamp:</strong> 2025-07-04 01:15:10</p>
+        <div class="vuln-details"><strong>Details:</strong><br><strong>Target:</strong> http://testphp.vulnweb.com/userinfo.php<br><strong>Method:</strong> POST<br><strong>Parameter:</strong> uemail<br><strong>Payload:</strong> &quot;&gt;&lt;hTML ONmOUSeOvER = [1].find(confirm) //<br><strong>Efficiency:</strong> 100<br><strong>Confidance:</strong> 9</div>
+      </li>
+      <li class="vuln-item sev-CRITICAL">
+        <p><span class="severity-label sev-CRITICAL">CRITICAL</span>XSS Reflected Vulnerability</p>
+        <p><strong>Timestamp:</strong> 2025-07-04 01:15:13</p>
+        <div class="vuln-details"><strong>Details:</strong><br><strong>Target:</strong> http://testphp.vulnweb.com/userinfo.php<br><strong>Method:</strong> POST<br><strong>Parameter:</strong> uphone<br><strong>Payload:</strong> &quot;&gt;&lt;HTML onmoUSEOVEr = [1].find(confirm) //<br><strong>Efficiency:</strong> 100<br><strong>Confidance:</strong> 9</div>
+      </li>
+      <li class="vuln-item sev-CRITICAL">
+        <p><span class="severity-label sev-CRITICAL">CRITICAL</span>XSS Reflected Vulnerability</p>
+        <p><strong>Timestamp:</strong> 2025-07-04 01:15:16</p>
+        <div class="vuln-details"><strong>Details:</strong><br><strong>Target:</strong> http://testphp.vulnweb.com/userinfo.php<br><strong>Method:</strong> POST<br><strong>Parameter:</strong> uaddress<br><strong>Payload:</strong> &lt;script&gt;[1].find(confirm)&lt;/script&gt;<br><strong>Efficiency:</strong> 100<br><strong>Confidance:</strong> 10</div>
+      </li>
+      <li class="vuln-item sev-CRITICAL">
+        <p><span class="severity-label sev-CRITICAL">CRITICAL</span>XSS Reflected Vulnerability</p>
+        <p><strong>Timestamp:</strong> 2025-07-04 01:15:19</p>
+        <div class="vuln-details"><strong>Details:</strong><br><strong>Target:</strong> http://testphp.vulnweb.com/hpp/?pp=st4r7s%22%3E%3ChtmL+onMouSEovER+%3D+%5B1%5D.find%28confirm%29+%2F%2F3nd<br><strong>Method:</strong> GET<br><strong>Parameter:</strong> pp<br><strong>Payload:</strong> &quot;&gt;&lt;htmL onMouSEovER = [1].find(confirm) //<br><strong>Efficiency:</strong> 100<br><strong>Confidance:</strong> 9</div>
+      </li>
+      <li class="vuln-item sev-CRITICAL">
+        <p><span class="severity-label sev-CRITICAL">CRITICAL</span>XSS Reflected Vulnerability</p>
+        <p><strong>Timestamp:</strong> 2025-07-04 01:19:01</p>
+        <div class="vuln-details"><strong>Details:</strong><br><strong>Target:</strong> http://testphp.vulnweb.com/guestbook.php<br><strong>Method:</strong> POST<br><strong>Parameter:</strong> name<br><strong>Payload:</strong> &lt;HTml ONmOusEover = [1].find(confirm) //<br><strong>Efficiency:</strong> 100<br><strong>Confidance:</strong> 10</div>
+      </li>
+      <li class="vuln-item sev-CRITICAL">
+        <p><span class="severity-label sev-CRITICAL">CRITICAL</span>XSS Reflected Vulnerability</p>
+        <p><strong>Timestamp:</strong> 2025-07-04 01:19:04</p>
+        <div class="vuln-details"><strong>Details:</strong><br><strong>Target:</strong> http://testphp.vulnweb.com/guestbook.php<br><strong>Method:</strong> POST<br><strong>Parameter:</strong> text<br><strong>Payload:</strong> &lt;script&gt;[1].find(confirm)&lt;/script&gt;<br><strong>Efficiency:</strong> 100<br><strong>Confidance:</strong> 10</div>
+      </li>
+      <li class="vuln-item sev-CRITICAL">
+        <p><span class="severity-label sev-CRITICAL">CRITICAL</span>XSS Reflected Vulnerability</p>
+        <p><strong>Timestamp:</strong> 2025-07-04 01:19:08</p>
+        <div class="vuln-details"><strong>Details:</strong><br><strong>Target:</strong> http://testphp.vulnweb.com/hpp/params.php?p=valid&amp;pp=st4r7s%3Cscript%3E%28prompt%29%60%60%3C%2Fscript%3E3nd<br><strong>Method:</strong> GET<br><strong>Parameter:</strong> pp<br><strong>Payload:</strong> &lt;script&gt;(prompt)``&lt;/script&gt;<br><strong>Efficiency:</strong> 100<br><strong>Confidance:</strong> 10</div>
+      </li>
+      <li class="vuln-item sev-CRITICAL">
+        <p><span class="severity-label sev-CRITICAL">CRITICAL</span>XSS Reflected Vulnerability</p>
+        <p><strong>Timestamp:</strong> 2025-07-04 01:20:58</p>
+        <div class="vuln-details"><strong>Details:</strong><br><strong>Target:</strong> http://testphp.vulnweb.com/secured/newuser.php<br><strong>Method:</strong> POST<br><strong>Parameter:</strong> uuname<br><strong>Payload:</strong> &lt;script&gt;[1].find(confirm)&lt;/script&gt;<br><strong>Efficiency:</strong> 100<br><strong>Confidance:</strong> 10</div>
+      </li>
+      <li class="vuln-item sev-CRITICAL">
+        <p><span class="severity-label sev-CRITICAL">CRITICAL</span>XSS Reflected Vulnerability</p>
+        <p><strong>Timestamp:</strong> 2025-07-04 01:21:01</p>
+        <div class="vuln-details"><strong>Details:</strong><br><strong>Target:</strong> http://testphp.vulnweb.com/secured/newuser.php<br><strong>Method:</strong> POST<br><strong>Parameter:</strong> urname<br><strong>Payload:</strong> &lt;script&gt;[1].find(confirm)&lt;/script&gt;<br><strong>Efficiency:</strong> 100<br><strong>Confidance:</strong> 10</div>
+      </li>
+      <li class="vuln-item sev-CRITICAL">
+        <p><span class="severity-label sev-CRITICAL">CRITICAL</span>XSS Reflected Vulnerability</p>
+        <p><strong>Timestamp:</strong> 2025-07-04 01:21:04</p>
+        <div class="vuln-details"><strong>Details:</strong><br><strong>Target:</strong> http://testphp.vulnweb.com/secured/newuser.php<br><strong>Method:</strong> POST<br><strong>Parameter:</strong> ucc<br><strong>Payload:</strong> &lt;script&gt;[1].find(confirm)&lt;/script&gt;<br><strong>Efficiency:</strong> 100<br><strong>Confidance:</strong> 10</div>
+      </li>
+      <li class="vuln-item sev-CRITICAL">
+        <p><span class="severity-label sev-CRITICAL">CRITICAL</span>XSS Reflected Vulnerability</p>
+        <p><strong>Timestamp:</strong> 2025-07-04 01:21:07</p>
+        <div class="vuln-details"><strong>Details:</strong><br><strong>Target:</strong> http://testphp.vulnweb.com/secured/newuser.php<br><strong>Method:</strong> POST<br><strong>Parameter:</strong> uemail<br><strong>Payload:</strong> &lt;script&gt;[1].find(confirm)&lt;/script&gt;<br><strong>Efficiency:</strong> 100<br><strong>Confidance:</strong> 10</div>
+      </li>
+      <li class="vuln-item sev-CRITICAL">
+        <p><span class="severity-label sev-CRITICAL">CRITICAL</span>XSS Reflected Vulnerability</p>
+        <p><strong>Timestamp:</strong> 2025-07-04 01:21:10</p>
+        <div class="vuln-details"><strong>Details:</strong><br><strong>Target:</strong> http://testphp.vulnweb.com/secured/newuser.php<br><strong>Method:</strong> POST<br><strong>Parameter:</strong> uphone<br><strong>Payload:</strong> &lt;script&gt;[1].find(confirm)&lt;/script&gt;<br><strong>Efficiency:</strong> 100<br><strong>Confidance:</strong> 10</div>
+      </li>
+      <li class="vuln-item sev-CRITICAL">
+        <p><span class="severity-label sev-CRITICAL">CRITICAL</span>XSS Reflected Vulnerability</p>
+        <p><strong>Timestamp:</strong> 2025-07-04 01:21:11</p>
+        <div class="vuln-details"><strong>Details:</strong><br><strong>Target:</strong> http://testphp.vulnweb.com/secured/newuser.php<br><strong>Method:</strong> POST<br><strong>Parameter:</strong> uphone<br><strong>Payload:</strong> &lt;script&gt;(confirm)()&lt;/script&gt;<br><strong>Efficiency:</strong> 100<br><strong>Confidance:</strong> 10</div>
+      </li>
+      <li class="vuln-item sev-CRITICAL">
+        <p><span class="severity-label sev-CRITICAL">CRITICAL</span>XSS Reflected Vulnerability</p>
+        <p><strong>Timestamp:</strong> 2025-07-04 01:21:11</p>
+        <div class="vuln-details"><strong>Details:</strong><br><strong>Target:</strong> http://testphp.vulnweb.com/secured/newuser.php<br><strong>Method:</strong> POST<br><strong>Parameter:</strong> uphone<br><strong>Payload:</strong> &lt;script&gt;(prompt)``&lt;/script&gt;<br><strong>Efficiency:</strong> 100<br><strong>Confidance:</strong> 10</div>
+      </li>
+      <li class="vuln-item sev-CRITICAL">
+        <p><span class="severity-label sev-CRITICAL">CRITICAL</span>XSS Reflected Vulnerability</p>
+        <p><strong>Timestamp:</strong> 2025-07-04 01:21:11</p>
+        <div class="vuln-details"><strong>Details:</strong><br><strong>Target:</strong> http://testphp.vulnweb.com/secured/newuser.php<br><strong>Method:</strong> POST<br><strong>Parameter:</strong> uphone<br><strong>Payload:</strong> &lt;htMl ONMOUSeOvER = [1].find(confirm)//<br><strong>Efficiency:</strong> 100<br><strong>Confidance:</strong> 10</div>
+      </li>
+      <li class="vuln-item sev-CRITICAL">
+        <p><span class="severity-label sev-CRITICAL">CRITICAL</span>XSS Reflected Vulnerability</p>
+        <p><strong>Timestamp:</strong> 2025-07-04 01:21:11</p>
+        <div class="vuln-details"><strong>Details:</strong><br><strong>Target:</strong> http://testphp.vulnweb.com/secured/newuser.php<br><strong>Method:</strong> POST<br><strong>Parameter:</strong> uphone<br><strong>Payload:</strong> &lt;script&gt;a=prompt,a()&lt;/script&gt;<br><strong>Efficiency:</strong> 100<br><strong>Confidance:</strong> 10</div>
+      </li>
+      <li class="vuln-item sev-CRITICAL">
+        <p><span class="severity-label sev-CRITICAL">CRITICAL</span>XSS Reflected Vulnerability</p>
+        <p><strong>Timestamp:</strong> 2025-07-04 01:21:11</p>
+        <div class="vuln-details"><strong>Details:</strong><br><strong>Target:</strong> http://testphp.vulnweb.com/secured/newuser.php<br><strong>Method:</strong> POST<br><strong>Parameter:</strong> uphone<br><strong>Payload:</strong> &lt;script&gt;alert(1)&lt;/script&gt;<br><strong>Efficiency:</strong> 100<br><strong>Confidance:</strong> 10</div>
+      </li>
+      <li class="vuln-item sev-CRITICAL">
+        <p><span class="severity-label sev-CRITICAL">CRITICAL</span>XSS Reflected Vulnerability</p>
+        <p><strong>Timestamp:</strong> 2025-07-04 01:21:11</p>
+        <div class="vuln-details"><strong>Details:</strong><br><strong>Target:</strong> http://testphp.vulnweb.com/secured/newuser.php<br><strong>Method:</strong> POST<br><strong>Parameter:</strong> uphone<br><strong>Payload:</strong> &lt;HtMl ONmoUSeoveR = [1].find(confirm) &gt;<br><strong>Efficiency:</strong> 100<br><strong>Confidance:</strong> 10</div>
+      </li>
+      <li class="vuln-item sev-CRITICAL">
+        <p><span class="severity-label sev-CRITICAL">CRITICAL</span>XSS Reflected Vulnerability</p>
+        <p><strong>Timestamp:</strong> 2025-07-04 01:21:11</p>
+        <div class="vuln-details"><strong>Details:</strong><br><strong>Target:</strong> http://testphp.vulnweb.com/secured/newuser.php<br><strong>Method:</strong> POST<br><strong>Parameter:</strong> uphone<br><strong>Payload:</strong> &lt;script&gt;confirm()&lt;/script&gt;<br><strong>Efficiency:</strong> 100<br><strong>Confidance:</strong> 10</div>
+      </li>
+      <li class="vuln-item sev-CRITICAL">
+        <p><span class="severity-label sev-CRITICAL">CRITICAL</span>XSS Reflected Vulnerability</p>
+        <p><strong>Timestamp:</strong> 2025-07-04 01:21:11</p>
+        <div class="vuln-details"><strong>Details:</strong><br><strong>Target:</strong> http://testphp.vulnweb.com/secured/newuser.php<br><strong>Method:</strong> POST<br><strong>Parameter:</strong> uphone<br><strong>Payload:</strong> &lt;script&gt;confirm()&lt;/script&gt;<br><strong>Efficiency:</strong> 100<br><strong>Confidance:</strong> 10</div>
+      </li>
+      <li class="vuln-item sev-CRITICAL">
+        <p><span class="severity-label sev-CRITICAL">CRITICAL</span>XSS Reflected Vulnerability</p>
+        <p><strong>Timestamp:</strong> 2025-07-04 01:21:13</p>
+        <div class="vuln-details"><strong>Details:</strong><br><strong>Target:</strong> http://testphp.vulnweb.com/secured/newuser.php<br><strong>Method:</strong> POST<br><strong>Parameter:</strong> uaddress<br><strong>Payload:</strong> &lt;script&gt;(prompt)``&lt;/script&gt;<br><strong>Efficiency:</strong> 100<br><strong>Confidance:</strong> 10</div>
+      </li>
+    </ul>
+    <div class="vuln-prevention"><strong>How to prevent:</strong> <ul><li>Always encode user-supplied data before rendering in the browser.</li><li>Implement Content Security Policy (CSP) headers.</li><li>Use secure frameworks that auto-escape outputs.</li><li>Sanitize HTML/JavaScript input on both server and client sides.</li></ul></div>
+  </div>
+</body>
+</html>

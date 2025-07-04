@@ -1,10 +1,8 @@
 import asyncio
 import ssl
-import time
 
 from urllib.request import urlopen
 from urllib.robotparser import RobotFileParser
-from urllib.parse import urlparse, urlunparse
 from urllib.error import URLError
 
 from collections import deque

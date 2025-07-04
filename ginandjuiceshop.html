@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stahlta Scan Report</title>
+  <style>
+    body { background-color: #121212; color: #e0e0e0; font-family: Arial, sans-serif; margin: 0; padding: 0; }
+    .container { max-width: 1800px; margin: 20px auto; background-color: #1e1e1e; padding: 30px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5); }
+    h1 { text-align: center; font-size: 2.5em; margin-bottom: 10px; color: #ffffff; }
+    h2, h3 { color: #e0e0e0; margin-top: 30px; margin-bottom: 10px; }
+    .summary { margin-bottom: 30px; }
+    .summary p { margin: 6px 0; font-size: 1em; }
+    .scan-info { background: #222; padding: 12px 18px; border-radius: 7px; margin-bottom: 20px; }
+    .scan-info strong { color: #fff; }
+    ul { padding-left: 20px; }
+    .vuln-list { list-style: none; padding: 0; }
+    .vuln-item { border: 1px solid #333; border-left: 5px solid transparent; border-radius: 4px; padding: 16px; margin-bottom: 20px; background-color: #2a2a2a; transition: background-color 0.2s; }
+    .vuln-item:hover { background-color: #333333; }
+    .severity-label { font-weight: bold; padding: 2px 6px; border-radius: 4px; color: #ffffff; margin-right: 8px; }
+    .sev-CRITICAL .severity-label { background-color: #b71c1c; }
+    .sev-HIGH .severity-label     { background-color: #d32f2f; }
+    .sev-MEDIUM .severity-label   { background-color: #f57c00; color: #000000; }
+    .sev-LOW .severity-label      { background-color: #388e3c; }
+    .vuln-item p { margin: 8px 0; font-size: 1em; }
+    .vuln-details { margin-top: 8px; margin-left: 16px; font-size: 0.95em; color: #cfcfcf; }
+    .vuln-prevention { margin-top: 10px; margin-left: 16px; font-size: 0.98em; background: #19202a; color: #a6e3a1; padding: 10px 16px; border-radius: 5px; border-left: 4px solid #4caf50; }
+    .generated-on { text-align: center; font-size: 1.08em; color: #c9d1d9; margin-bottom: 16px; }
+    .no-vulns { font-style: italic; color: #757575; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Stahlta Scan Report</h1>
+    <div class="summary">
+      <div class="generated-on"><strong>Generated on:</strong> 2025-07-04 00:52:08</div>
+      <div class="scan-info">
+        <p><strong>Target:</strong> https://ginandjuice.shop/</p>
+        <p><strong>Headless:</strong> yes</p>
+        <p><strong>Resources Scanned:</strong> 34</p>
+        <p><strong>Scan Time:</strong> 7 minutes, 25.71 seconds</p>
+      </div>
+      <h3>By Severity:</h3>
+      <ul>
+        <li><span class="severity-label sev-CRITICAL">CRITICAL</span>: 3</li>
+        <li><span class="severity-label sev-LOW">LOW</span>: 14</li>
+        <li><span class="severity-label sev-MEDIUM">MEDIUM</span>: 1</li>
+      </ul>
+    </div>
+    <h2>Vulnerabilities Details</h2>
+    <h3>CSRF</h3>
+    <ul class="vuln-list">
+      <li class="vuln-item sev-LOW">
+        <p><span class="severity-label sev-LOW">LOW</span>There is no Anti-CSRF token</p>
+        <p><strong>Timestamp:</strong> 2025-07-04 00:52:01</p>
+        <div class="vuln-details"><strong>Details:</strong><br><strong>Target:</strong> https://ginandjuice.shop/catalog/product/stock<br><strong>Method:</strong> POST<br><strong>Form:</strong> {&#x27;productId&#x27;: &#x27;2&#x27;, &#x27;storeId&#x27;: &#x27;3&#x27;}</div>
+      </li>
+      <li class="vuln-item sev-LOW">
+        <p><span class="severity-label sev-LOW">LOW</span>There is no Anti-CSRF token</p>
+        <p><strong>Timestamp:</strong> 2025-07-04 00:52:01</p>
+        <div class="vuln-details"><strong>Details:</strong><br><strong>Target:</strong> https://ginandjuice.shop/catalog/cart<br><strong>Method:</strong> POST<br><strong>Form:</strong> {&#x27;productId&#x27;: &#x27;2&#x27;, &#x27;redir&#x27;: &#x27;PRODUCT&#x27;, &#x27;quantity&#x27;: &#x27;1&#x27;}</div>
+      </li>
+    </ul>
+    <div class="vuln-prevention"><strong>How to prevent:</strong> <ul><li>Use anti-CSRF tokens in forms and AJAX requests.</li><li>Validate the origin of requests on the server side.</li><li>Implement SameSite cookie attributes.</li><li>Use secure headers like X-Frame-Options to prevent clickjacking.</li></ul></div>
+    <h3>Cookie Flags</h3>
+    <ul class="vuln-list">
+      <li class="vuln-item sev-LOW">
+        <p><span class="severity-label sev-LOW">LOW</span>Cookies HttpOnly flag is not set</p>
+        <p><strong>Timestamp:</strong> 2025-07-04 00:52:01</p>
+        <div class="vuln-details"><strong>Details:</strong><br><strong>Target:</strong> https://ginandjuice.shop/<br><strong>Cookie:</strong> session</div>
+      </li>
+      <li class="vuln-item sev-LOW">
+        <p><span class="severity-label sev-LOW">LOW</span>Cookies HttpOnly flag is not set</p>
+        <p><strong>Timestamp:</strong> 2025-07-04 00:52:01</p>
+        <div class="vuln-details"><strong>Details:</strong><br><strong>Target:</strong> https://ginandjuice.shop/<br><strong>Cookie:</strong> TrackingId</div>
+      </li>
+      <li class="vuln-item sev-LOW">
+        <p><span class="severity-label sev-LOW">LOW</span>Cookies SameSite flag is not set</p>
+        <p><strong>Timestamp:</strong> 2025-07-04 00:52:01</p>
+        <div class="vuln-details"><strong>Details:</strong><br><strong>Target:</strong> https://ginandjuice.shop/<br><strong>Cookie:</strong> TrackingId</div>
+      </li>
+      <li class="vuln-item sev-LOW">
+        <p><span class="severity-label sev-LOW">LOW</span>Cookies HttpOnly flag is not set</p>
+        <p><strong>Timestamp:</strong> 2025-07-04 00:52:01</p>
+        <div class="vuln-details"><strong>Details:</strong><br><strong>Target:</strong> https://ginandjuice.shop/<br><strong>Cookie:</strong> category</div>
+      </li>
+      <li class="vuln-item sev-LOW">
+        <p><span class="severity-label sev-LOW">LOW</span>Cookies SameSite flag is not set</p>
+        <p><strong>Timestamp:</strong> 2025-07-04 00:52:01</p>
+        <div class="vuln-details"><strong>Details:</strong><br><strong>Target:</strong> https://ginandjuice.shop/<br><strong>Cookie:</strong> category</div>
+      </li>
+      <li class="vuln-item sev-LOW">
+        <p><span class="severity-label sev-LOW">LOW</span>Cookies secure flag is not set</p>
+        <p><strong>Timestamp:</strong> 2025-07-04 00:52:01</p>
+        <div class="vuln-details"><strong>Details:</strong><br><strong>Target:</strong> https://ginandjuice.shop/<br><strong>Cookie:</strong> AWSALB</div>
+      </li>
+      <li class="vuln-item sev-LOW">
+        <p><span class="severity-label sev-LOW">LOW</span>Cookies HttpOnly flag is not set</p>
+        <p><strong>Timestamp:</strong> 2025-07-04 00:52:01</p>
+        <div class="vuln-details"><strong>Details:</strong><br><strong>Target:</strong> https://ginandjuice.shop/<br><strong>Cookie:</strong> AWSALB</div>
+      </li>
+      <li class="vuln-item sev-LOW">
+        <p><span class="severity-label sev-LOW">LOW</span>Cookies SameSite flag is not set</p>
+        <p><strong>Timestamp:</strong> 2025-07-04 00:52:01</p>
+        <div class="vuln-details"><strong>Details:</strong><br><strong>Target:</strong> https://ginandjuice.shop/<br><strong>Cookie:</strong> AWSALB</div>
+      </li>
+      <li class="vuln-item sev-LOW">
+        <p><span class="severity-label sev-LOW">LOW</span>Cookies HttpOnly flag is not set</p>
+        <p><strong>Timestamp:</strong> 2025-07-04 00:52:01</p>
+        <div class="vuln-details"><strong>Details:</strong><br><strong>Target:</strong> https://ginandjuice.shop/<br><strong>Cookie:</strong> AWSALBCORS</div>
+      </li>
+    </ul>
+    <div class="vuln-prevention"><strong>How to prevent:</strong> <ul><li>Set the HttpOnly flag on cookies to prevent JavaScript access.</li><li>Use the Secure flag to ensure cookies are only sent over HTTPS.</li><li>Implement the SameSite attribute to control cross-site cookie behavior.</li><li>Regularly review and update cookie policies.</li></ul></div>
+    <h3>HTTP Headers</h3>
+    <ul class="vuln-list">
+      <li class="vuln-item sev-LOW">
+        <p><span class="severity-label sev-LOW">LOW</span>Missing X-Content-Type-Options header (MIME confusion risk)</p>
+        <p><strong>Timestamp:</strong> 2025-07-04 00:52:01</p>
+        <div class="vuln-details"><strong>Details:</strong><br><strong>Target:</strong> https://ginandjuice.shop/<br><strong>Header:</strong> X-Content-Type-Options</div>
+      </li>
+      <li class="vuln-item sev-LOW">
+        <p><span class="severity-label sev-LOW">LOW</span>Missing Strict-Transport-Security header (no HTTPS enforcement)</p>
+        <p><strong>Timestamp:</strong> 2025-07-04 00:52:01</p>
+        <div class="vuln-details"><strong>Details:</strong><br><strong>Target:</strong> https://ginandjuice.shop/<br><strong>Header:</strong> Strict-Transport-Security</div>
+      </li>
+    </ul>
+    <div class="vuln-prevention"><strong>How to prevent:</strong> <ul><li>Use security headers like Content Security Policy (CSP), X-Content-Type-Options, and X-Frame-Options.</li><li>Implement strict Transport Security (HSTS) to enforce HTTPS.</li><li>Regularly review and update security headers.</li><li>Use tools to scan and validate header configurations.</li></ul></div>
+    <h3>SQL Injection</h3>
+    <ul class="vuln-list">
+      <li class="vuln-item sev-MEDIUM">
+        <p><span class="severity-label sev-MEDIUM">MEDIUM</span>SQL Injection via cookie detected (status code change)</p>
+        <p><strong>Timestamp:</strong> 2025-07-04 00:45:26</p>
+        <div class="vuln-details"><strong>Details:</strong><br><strong>Target:</strong> https://ginandjuice.shop/login<br><strong>Cookie mutation:</strong> TrackingId : type  + &#x27;<br><strong>Status code changed from:</strong> 400<br><strong>To:</strong> 200</div>
+      </li>
+      <li class="vuln-item sev-CRITICAL">
+        <p><span class="severity-label sev-CRITICAL">CRITICAL</span>SQL Injection UNION based SQLi detected</p>
+        <p><strong>Timestamp:</strong> 2025-07-04 00:45:30</p>
+        <div class="vuln-details"><strong>Details:</strong><br><strong>Target:</strong> https://ginandjuice.shop/catalog?category=Books%27+UNION+SELECT+NULL%2CNULL%2CNULL%2C0x6AEEE2F7%2CNULL%2CNULL%2CNULL%2CNULL--<br><strong>Method:</strong> GET<br><strong>Parameter:</strong> category<br><strong>Payload:</strong> &#x27; UNION SELECT NULL,NULL,NULL,0x6AEEE2F7,NULL,NULL,NULL,NULL--</div>
+      </li>
+    </ul>
+    <div class="vuln-prevention"><strong>How to prevent:</strong> <ul><li>Use parameterized queries (prepared statements) to separate SQL logic from data.</li><li>Validate and sanitize all user inputs on both client and server side.</li><li>Use ORM frameworks to abstract database queries.</li><li>Limit database permissions for the application user.</li><li>Avoid displaying detailed database errors to users.</li></ul></div>
+    <h3>XSS</h3>
+    <ul class="vuln-list">
+      <li class="vuln-item sev-CRITICAL">
+        <p><span class="severity-label sev-CRITICAL">CRITICAL</span>XSS Reflected Vulnerability</p>
+        <p><strong>Timestamp:</strong> 2025-07-04 00:48:54</p>
+        <div class="vuln-details"><strong>Details:</strong><br><strong>Target:</strong> https://ginandjuice.shop/catalog?searchTerm=st4r7s%5C%27%3Bconfirm%28%29%2F%2F3nd<br><strong>Method:</strong> GET<br><strong>Parameter:</strong> searchTerm<br><strong>Payload:</strong> \&#x27;;confirm()//<br><strong>Efficiency:</strong> 96<br><strong>Confidance:</strong> 6</div>
+      </li>
+      <li class="vuln-item sev-LOW">
+        <p><span class="severity-label sev-LOW">LOW</span>Potential DOM-based XSS found</p>
+        <p><strong>Timestamp:</strong> 2025-07-04 00:48:54</p>
+        <div class="vuln-details"><strong>Details:</strong><br><strong>Target:</strong> https://ginandjuice.shop/blog/?search=default&amp;back=/blog/<br><strong>Explanation:</strong> The following code block is extracted from the page&#x27;s JavaScript. Relevant JavaScript sources (where user input may enter the code) and dangerous sinks (functions that can result in code execution) are highlighted for visibility in the report. If untrusted user input can reach one of these dangerous functions, it may be possible for an attacker to execute JavaScript in the browser (DOM-based XSS). Review the highlighted code to determine if user-controllable data is passed to functions like document.write, innerHTML, or similar without proper sanitization.<br><strong>HTML_Details:</strong> <pre style="font-size:13px;background:#222;color:#eee;padding:8px;border-radius:6px;overflow-x:auto;"><code><span style="color:#f66;font-weight:bold">document.write</span>('&lt;img src="/resources/images/tracker.gif?searchTerms='+query+'"&gt;');
+var query = (new URLSearchParams(window.location.search)).get('search');
+if(query) {
+trackSearch(query);</code></pre></div>
+      </li>
+      <li class="vuln-item sev-CRITICAL">
+        <p><span class="severity-label sev-CRITICAL">CRITICAL</span>XSS Reflected Vulnerability</p>
+        <p><strong>Timestamp:</strong> 2025-07-04 00:52:00</p>
+        <div class="vuln-details"><strong>Details:</strong><br><strong>Target:</strong> https://ginandjuice.shop/catalog?searchTerm=st4r7s%5C%27%3B%5B1%5D.find%28confirm%29%2F%2F3nd&amp;category=Books<br><strong>Method:</strong> GET<br><strong>Parameter:</strong> searchTerm<br><strong>Payload:</strong> \&#x27;;[1].find(confirm)//<br><strong>Efficiency:</strong> 97<br><strong>Confidance:</strong> 6</div>
+      </li>
+    </ul>
+    <div class="vuln-prevention"><strong>How to prevent:</strong> <ul><li>Always encode user-supplied data before rendering in the browser.</li><li>Implement Content Security Policy (CSP) headers.</li><li>Use secure frameworks that auto-escape outputs.</li><li>Sanitize HTML/JavaScript input on both server and client sides.</li></ul></div>
+  </div>
+</body>
+</html>

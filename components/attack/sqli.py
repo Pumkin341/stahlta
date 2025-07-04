@@ -577,7 +577,7 @@ class SQLInjection(BaseAttack):
                 if resp.status_code >= 500:
                     continue
                 if marker in resp.text:
-                    log_vulnerability('CRITICAL', f"SQL Injection UNION based SQLi detected")
+                    log_vulnerability('CRITICAL', f"SQL Injection UNION based detected")
                     log_detail('Target', mutated.url)
                     log_detail('Method', mutated.method)
                     log_detail('Parameter', param)

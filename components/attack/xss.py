@@ -46,6 +46,7 @@ class XSS(BaseAttack):
                 "If untrusted user input can reach one of these dangerous functions, it may be possible for an attacker to execute JavaScript in the browser (DOM-based XSS). "
                 "Review the highlighted code to determine if user-controllable data is passed to functions like document.write, innerHTML, or similar without proper sanitization."
             ))
+            print()
             for line in dom:
                 if line:
                     log_detail(line)
