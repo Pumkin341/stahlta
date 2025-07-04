@@ -13,10 +13,8 @@ from components.web.request import Request
 
 class CommandInjection(BaseAttack):
     name = 'cmd'
-    # Skip these parameters entirely
     SKIP_PARAMS = {'csrf_token', 'session_id', 'auth_token', 'auth_key', 'token'}
 
-    # Regex patterns indicating execution or errors, with boundaries to avoid false positives
     WARNING_PATTERNS = [
         r'Warning: exec\(', r'Warning: system\(', r'Warning: shell_exec\(',
         r'Traceback \(most recent call last\):', r'(^|\s)sh: ', r'(^|\s)bash: ', r'cmd not found',

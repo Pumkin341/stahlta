@@ -4,10 +4,7 @@ from tld.exceptions import TldDomainNotFound, TldBadUrl
 from urllib.parse import urlparse
 
 def js_redirections(text: str):
-    """
-    Scans the given JavaScript text and returns a list of unique URLs that are used for redirection.
-    It extracts URLs from both location assignments and window.open calls.
-    """
+
     JS_REDIRECT_REGEX = re.compile(r"\b(?:window\.|document\.|top\.|self\.)?location(?:\.href)?\s*=\s*(\"|')([^\"']+)\1\s*(?:;|}|$)")
     WINDOW_OPEN_REGEX = re.compile(r"\bwindow\.open\(\s*(\"|')([^\"']+)\1\s*\)")
     
@@ -32,16 +29,14 @@ def dynamic_links(data: str, url: str):
     domain_found.append(target_url)
     domain_found.append(target_url)
 
-    # extract literal “path”-style strings
     data_found = re.findall(r"(?:path|redirectTo|templateUrl)[\"']?:\s?[\"'](?P<path>[^\"'+*$(]*)[\"']", data)
     data_found += re.findall(r"\[\"(?:href|src)[\"'],\s?[\"'](?P<path>[^\"'(:]*)[\"']",data)
     data_found += re.findall(r"router\.(?:navigateByUrl|parseUrl|isActive)\([\w\s.+]*[\"'](?P<path>.*?)[\"'].*?\)", data)
     data_with_params = re.findall(r"router\.(?:navigate|createUrlTree)\(\[[\w\s]*[\"'](?P<path>.*?[\"'].*?)\](?:.*?)\)", data)
-    
-    # clean up array-of-params patterns
+   
     for i, dp in enumerate(data_with_params):
-        tmp = re.sub(r'["+\s]', '', dp)    # strip quotes, pluses, whitespace
-        tmp = re.sub(r'/,', '/', tmp)      # fix leftover commas
+        tmp = re.sub(r'["+\s]', '', dp)   
+        tmp = re.sub(r'/,', '/', tmp)  
         data_with_params[i] = tmp.replace(',', '/')
     data_found += data_with_params
 
@@ -52,7 +47,6 @@ def dynamic_links(data: str, url: str):
         if path and "http" not in path and path not in path_found:
             path_found.append(path)
 
-    # catch any hard‑coded full URLs on our same domain
     raw_urls = re.findall(r"https?:\/\/[^\"'\\ )]+", data)
     for raw in raw_urls:
         u = raw.rstrip('<>"\') ')
@@ -63,7 +57,6 @@ def dynamic_links(data: str, url: str):
         except (TldDomainNotFound, TldBadUrl):
             continue
 
-    # build final URLs by combining each domain with each path
     for u in domain_found:
         parts  = urlparse(u)
         scheme = parts.scheme
