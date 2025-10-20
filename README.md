@@ -1,10 +1,14 @@
 # Stahlta
+A modular Python-based tool designed to detect common and high-impact vulnerabilities in modern web applications.  
+The scanner performs both **static and dynamic analysis**, sending crafted payloads and analyzing responses to uncover potential security flaws.
 
-
-## Features
-
+## 🔍 Key Features
+- Detects vulnerabilities such as **SQL Injection**, **Cross-Site Scripting (XSS)**, **CSRF**, insecure cookies, and misconfigured headers  
+- Uses **context-aware payload generation** for accurate detection and minimal false positives  
+- Generates **comprehensive vulnerability reports** with categorized findings and recommendations  
+- Built with a **modular architecture**, making it easy to extend or integrate with other tools  
+- Tests for both **traditional** and **modern** attack vectors
 - Asynchronous HTTP fetching and processing  
-- Plugin‐style `components/` architecture  
 - Single-command CLI invocation  
 
 ## Prerequisites
