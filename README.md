@@ -15,7 +15,7 @@ The scanner performs both **static and dynamic analysis**, sending crafted paylo
 
 - Python 3.8 or newer  
 - `git`  
-- (Optional) [`virtualenv`](https://virtualenv.pypa.io/) or built-in `venv`  
+- [`virtualenv`](https://virtualenv.pypa.io/) or built-in `venv`  
 
 ## Installation Guide
 
